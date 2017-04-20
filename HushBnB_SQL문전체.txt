@@ -1,0 +1,2040 @@
+-- 이 순서로 create!!!!
+
+
+-- 회원 테이블
+create table tblMember
+(
+  id varchar2(10) primary key, -- 아이디
+  pw varchar2(10) not null, -- 비밀번호
+  lv char(1) not null, -- 등급
+  image varchar2(100) null, -- 사진
+  fileName varchar2(100) null,
+  name nvarchar2(4) not null, -- 이름
+  birth date not null, -- 생년월일
+  age number not null, -- 나이
+  gender char(1) not null, -- 성별
+  tel varchar2(13) not null, -- 휴대번호
+  email varchar2(30) not null -- 이메일
+);
+
+-- 일정 테이블
+create table tblItinerary
+(
+  seq number primary key, -- 번호
+  id varchar2(10) not null references tblMember(id), -- 아이디
+  destination nvarchar2(7) not null, -- 목적지, 여행지  대분류
+  startDate date not null, -- 시작날
+  endDate date not null, -- 마지막날
+  peopleNum number(1) not null, -- 총 인원
+  price number not null, -- 가격
+  gender char(1) not null -- 성별  회원정보로 자동으로 입력
+);
+create sequence itinerarySeq;
+
+-- 시특별시 테이블
+create table tblCity(
+    seq number primary key,
+    city nvarchar2(7) not null -- 서울특별시
+);
+create sequence citySeq;
+
+-- 시지역구역 테이블
+create table tblRegion(
+    seq number primary key,
+    citySeq number not null references tblCity(seq),
+    region nvarchar2(10) not null -- 동대문구
+);
+create sequence regionSeq;
+
+-- 상세일정 테이블
+create table tblDetailItinerary
+(
+  seq number primary key, -- 번호
+  itinerarySeq number not null references tblItinerary(seq), -- 일정번호
+  detailDate date not null, -- 상세날짜
+  time varchar2(10) not null, -- 시간 PM1000
+  regionSeq number not null references tblRegion(seq), -- 소분류
+  place nvarchar2(30) not null -- 장소
+);
+create sequence detailItinerarySeq;
+
+-- 숙박 테이블
+create table tblAccommodation(
+  codeNum varchar2(5) primary key, -- 숙박시설 고유번호 SE001 BU001
+  regionSeq number not null references tblRegion(seq),
+  name nvarchar2(20) not null, -- 숙박 이름
+  address nvarchar2(50) not null,
+  latitude number not null, --위도
+  longitude number not null, --경도
+  mainImg varchar2(100) null,  -- SE001_main.jpg
+  fileName varchar2(100) null,
+  checkIn varchar2(10) not null, -- AM1100
+  checkOut varchar2(10) not null, -- PM0300
+  price number not null, -- 가격  88000
+  breakFirst char(1) not null, -- 조식 y or n
+  totalZzim number not null, -- 총 찜  3
+  bathroom number not null, -- 화장실 수  2
+  bed number not null, -- 침대 수  3
+  room number not null, -- 방 수  1
+  gender char(1) not null --성별
+);
+
+-- 찜 테이블
+create table tblZzim 
+(
+  seq number primary key, -- 번호
+  id varchar2(10) not null references tblMember(id), -- 아이디
+  accommodationCodeNum varchar2(5) not null references tblAccommodation(codeNum), -- 숙박코드
+  zzimDate date default sysdate null,  -- 찜날짜
+  dDay date not null -- 숙박날짜
+);
+create sequence zzimSeq;
+
+-- 결제 테이블
+create table tblPayment 
+(
+  seq number primary key, -- 번호
+  accommodationCodeNum varchar2(5) not null references tblAccommodation(codeNum), -- 숙박코드
+  detailItinerarySeq number not null references tblDetailItinerary(seq), -- 상세일정번호
+  id varchar2(10) not null references tblMember(id), -- 아이디
+  zzimSeq number not null references tblZzim(seq),
+  ch char(1) not null -- 체크 - 결제(y) or 취소(n)
+);
+create sequence paymentSeq;
+
+-- 메시지함 테이블
+create table tblMessage 
+(
+  seq number primary key, -- 번호
+  id varchar2(10) not null references tblMember(id), -- 아이디
+  title nvarchar2(100) not null,
+  message nvarchar2(500) not null, -- 메시지
+  regDate date default sysdate not null -- 등록일
+);
+create sequence messageSeq;
+
+-- 상세이미지 테이블
+create table tblDetailImg(
+   seq number primary key,
+   codeNum varchar2(5) not null references tblAccommodation(codeNum), 
+   detailImg1 varchar2(100) null,  -- SE001_detail01.jpg
+   fileName1 varchar2(100) null,
+   detailImg2 varchar2(100) null,
+   fileName2 varchar2(100) null,
+   detailImg3 varchar2(100) null,
+   fileName3 varchar2(100) null,
+   detailImg4 varchar2(100) null,
+   fileName4 varchar2(100) null,
+   detailImg5 varchar2(100) null,
+   fileName5 varchar2(100) null
+);
+create sequence detailImgSeq;
+
+-- 편의시설 테이블
+create table tblAmenity(
+   seq number primary key,
+   codeNum varchar2(5) not null references tblAccommodation(codeNum),
+   internet char(1) not null, -- y or n
+   elevator char(1) not null,
+   tv char(1) not null,
+   washingMachine char(1) not null,
+   hairDryer char(1) not null,
+   pool char(1) not null,
+   parkingLot char(1) not null
+);
+create sequence amenitySeq;
+
+-- 주변추천 테이블
+create table tblAttraction(
+    seq number primary key,
+    regionSeq number not null references tblRegion(seq),
+    image varchar2(20) not null, 
+    name nvarchar2(10), -- 해운대 해수욕장
+    address nvarchar2(50) not null,
+    description nvarchar2(500) not null -- 부산의 자랑 해운대에서 야경을 즐겨보세요.
+);
+create sequence attractionSeq;
+
+--리뷰 테이블
+create table tblReview
+(
+ seq number primary key,  -- 번호
+ id varchar2(10) not null references tblMember(id), --id 회원테이블참조
+ codeNum varchar2(5)  not null references tblAccommodation, -- 상품코드넘버 참조
+ title nvarchar2(100) not null, -- 글제목
+ content nvarchar2(500) not null, -- 글내용
+ readCount number default (0) not null, --조회수
+ regDate date default sysdate not null -- 등록날짜
+);
+create sequence reviewSeq;
+
+--숙박Question 테이블
+create table tblAccommodationQuestion
+(
+ seq number primary key, -- 번호
+ id varchar2(10) not null references tblMember(id), --id 회원테이블참조
+ codeNum varchar2(5) not null references tblAccommodation, -- 상품코드넘버 참조
+ title nvarchar2(100) not null, -- 글제목
+ content nvarchar2(500) not null,  -- 글내용
+ readCount number default (0) not null, --조회수
+ regDate date default sysdate not null -- 등록날짜
+);
+create sequence accommodationQuestionSeq;
+
+--홈페이지Question 테이블
+create table tblHomepageQuestion
+(
+ seq number primary key, -- 번호
+ id varchar2(10) not null references tblMember(id), --id 회원테이블참조
+ title nvarchar2(100) not null, -- 글제목
+ content nvarchar2(500) not null,  -- 글내용
+ readCount number default (0) not null, --조회수
+ regDate date default sysdate not null -- 등록날짜
+); 
+create sequence homepageQuestionSeq;
+
+-- 상품 답변 테이블
+create table tblAccommodationAnswer
+(
+ seq number primary key, -- 번호
+ id varchar2(10) not null references tblMember(id),--id 회원테이블참조
+ answer nvarchar2(500) not null, -- 답변
+ accommodationQuestionSeq number not null references tblAccommodationQuestion(seq) -- 상품번호 참조 답변위함
+);
+create sequence accommodationAnswerSeq;
+
+-- 홈페이지 답변 테이블 
+create table tblHomepageAnswer
+(
+ seq number primary key,
+ id varchar2(10) not null references tblMember(id), --id 회원테이블참조
+ answer nvarchar2(500) not null, -- 답변
+ homepageQuestionSeq number not null references tblHomepageQuestion(seq)  -- 홈페이지번호 참조 답변위함
+);
+create sequence homepageAnswerSeq; 
+
+-- 공지사항 테이블
+create table tblNotice
+(
+ seq number primary key, -- 번호
+ id varchar2(10)  not null references tblMember(id), --id 회원테이블참조
+ image varchar2(100) null, -- 사진, notice1.png 여기서 1은 seq야
+ fileName varchar2(100) null,
+ title nvarchar2(100) not null,
+ content nvarchar2(2000) not null, -- 글내용
+ readCount number default (0) not null, --조회수
+ regDate date default sysdate not null  -- 등록날짜
+);
+create sequence noticeSeq;
+
+
+-- 이 순서로 drop!!!!
+
+drop table tblAccommodationAnswer;
+drop sequence accommodationAnswerSeq;
+
+drop table tblAccommodationQuestion;
+drop sequence accommodationQuestionSeq;
+
+drop table tblHomepageAnswer;
+drop sequence homepageAnswerSeq;
+
+drop table tblHomepageQuestion;
+drop sequence homepageQuestionSeq;
+
+drop table tblReview;
+drop sequence reviewSeq;
+
+drop table tblNotice;
+drop sequence noticeSeq;
+
+drop table tblMessage;
+drop sequence messageSeq;
+
+drop table tblAmenity;
+drop sequence amenitySeq;
+
+drop table tblAttraction;
+drop sequence attractionSeq;
+
+drop table tblDetailImg;
+drop sequence detailImgSeq;
+
+drop table tblPayment;
+drop sequence paymentSeq;
+
+drop table tblDetailItinerary;
+drop sequence detailItinerarySeq;
+
+drop table tblItinerary;
+drop sequence itinerarySeq;
+
+drop table tblZzim;
+drop sequence zzimSeq;
+
+drop table tblAccommodation;
+
+drop table tblRegion;
+drop sequence regionSeq;
+
+drop table tblCity;
+drop sequence citySeq;
+
+drop table tblMember;
+
+commit;
+
+-- insert하자
+
+-- tblMember
+
+insert into tblMember values ('hodu5637','daechu77','c','hodu5637_image.png','hodu5637_image.png','김명진','1989-10-06',27,'m', '010-2711-6904','loststory7@naver.com');
+insert into tblMember values ('rlfnrrlfnr','1234aa','c','rlfnrrlfnr_image.png','rlfnrrlfnr_image.png','김두환','1991-11-30',25,'m', '010-4655-6654','rlfnrrlfnr@naver.com');
+insert into tblMember values ('bm1004','bm1004','c','bm1004_image.png','bm1004_image.png','이병민','1991-11-27',25,'m', '010-4497-0085','qudalsl1@naver.com');
+insert into tblMember values ('bjhhogu','bjhhogu','c','bjhhogu_image.png','bjhhogu_image.png','박지훈','1991-12-30',25,'m', '010-2245-7754','wlgns777@naver.com');
+insert into tblMember values ('jingjing','whdgns2','c','jingjing_image.png','jingjing_image.png','박종훈','1989-06-11',27,'m', '010-4474-1154','whdgns1234@naver.com');
+insert into tblMember values ('king32','tjdghks2','c','king32_image.png','king32_image.png','이성환','1985-01-30',30,'m', '010-3354-0045','tjdghks1@naver.com');
+insert into tblMember values ('hw5959','hw5959','c','hw5959_image.png','hw5959_image.png','김혜원','1992-04-30',24,'f', '010-2221-1104','gPdnjsWkd@naver.com');
+insert into tblMember values ('jyun9095','wlgus2','c','jyun9095_image.png','jyun9095_image.png','이지현','1992-11-10',24,'f', '010-7787-0004','rkswlwlgus@naver.com');
+insert into tblMember values ('nojy90','nojy90','c','nojy90_image.png','nojy90_image.png','노진아','1958-11-24',58,'m', '010-1125-3354','akwjr111@naver.com');
+insert into tblMember values ('ht1004','gusxo2','c','ht1004_image.png','ht1004_image.png','김현태','1986-05-10',30,'m', '010-1445-7878','gusxo1@naver.com');
+
+insert into tblMember values ('mudohehe','ekftn2','c','mudohehe_image.png','mudohehe_image.png','황광희','1961-02-15',55,'m', '010-1124-0079','ekftn123@naver.com');
+insert into tblMember values ('celery','wjdals2','c','celery_image.png','celery_image.png','이영후','1977-08-25',39,'m', '010-1122-3321','wjdals1@naver.com');
+insert into tblMember values ('warehouse','dbswn11','c','warehouse_image.png','warehouse_image.png','김진혁','1988-09-11',28,'f', '010-5544-6604','dbswnwkd1@naver.com');
+insert into tblMember values ('mj1004','dkdls2','c','mj1004_image.png','mj1004_image.png','정민재','1991-11-10',27,'m', '010-3321-3351','haha1212@naver.com');
+insert into tblMember values ('octopus','wjdwo1','c','octopus_image.png','octopus_image.png','문지예','1990-05-11',26,'m', '010-7787-6994','wjdwo33@naver.com');
+insert into tblMember values ('hjhj59595','wlsdnd2','c','hjhj59595_image.png','hjhj59595_image.png','홍지원','1992-10-11',24,'m', '010-1511-7744','whwlsdnd1@naver.com');
+insert into tblMember values ('myy11','ejrqo2','c','myy11_image.png','myy11_image.png','민아인','1989-11-15',27,'m', '010-5553-7777','ejrqo11@naver.com');
+insert into tblMember values ('sotae','wjdvlf2','c','sotae_image.png','sotae_image.png','박소현','1995-03-22',21,'f', '010-8878-2245','wjdvlf133@naver.com');
+insert into tblMember values ('binuuu','ejrtns2','c','binuuu_image.png','binuuu_image.png','신은빈','1992-10-15',24,'f', '010-1155-6668','ejrtns22@naver.com');
+insert into tblMember values ('mingug','cjftns2','c','mingug_image.png','mingug_image.png','김현정','1990-12-11',26,'f', '010-3131-6101','cjftns13@naver.com');
+
+insert into tblMember values ('kkimyh','vlzk11','c','kkimyh_image.png','kkimyh_image.png','김용희','1991-10-11',27,'f', '010-1515-2211','vlzkvlzk1@naver.com');
+insert into tblMember values ('limjjang','rhqnr12','c','limjjang_image.png','limjjang_image.png','임형진','1994-12-10',22,'f', '010-4411-5554','rhqnrrhqnr1@naver.com');
+insert into tblMember values ('gh5959','flwkahd12','c','gh5959_image.png','gh5959_image.png','박근학','1990-11-30',26,'m', '010-7744-1213','flwkahd123@naver.com');
+insert into tblMember values ('ckdtns11','ckdtns2','c','ckdtns11_image.png','ckdtns11_image.png','김창순','1988-09-10',28,'m', '010-1121-3314','ckdtns11@naver.com');
+insert into tblMember values ('ckddnjs13','ckddnjs2','c','ckddnjs13_image.png','ckddnjs13_image.png','신창원','1989-07-13',27,'m', '010-4544-2333','ckddnjs13@naver.com');
+insert into tblMember values ('ghtlr11','ghtlr2','c','ghtlr11_image.png','ghtlr11_image.png','호식이','1985-07-11',31,'m', '010-2254-0005','ghtlr11@naver.com');
+insert into tblMember values ('dudtls112','dudtls1','c','dudtls112_image.png','dudtls112_image.png','김영신','1991-06-21',25,'f', '010-6665-2344','dudtls112@naver.com');
+insert into tblMember values ('ejrrb13','ejrrb2','c','ejrrb13_image.png','ejrrb13_image.png','김덕규','1965-08-22',51,'m', '010-3354-1132','ejrrb13@naver.com');
+insert into tblMember values ('tnghks11','tnghks2','c','tnghks11_image.png','tnghks11_image.png','정수환','1991-03-10',25,'m', '010-5511-1505','tnghks11@naver.com');
+insert into tblMember values ('ansrl1350','ansrl2','c','ansrl1350_image.png','ansrl1350_image.png','김문기','1991-09-21',25,'m', '010-1210-5504','ansrl1350@naver.com');
+
+insert into tblMember values ('gmlwn13','gmlwn2','c','gmlwn13_image.png','gmlwn13_image.png','도희주','1958-04-12',58,'f', '010-1277-6698','gmlwn13@naver.com');
+insert into tblMember values ('rbqja22','rbqja2','c','rbqja22_image.png','rbqja22_image.png','황규범','1989-05-15',27,'m', '010-9811-7752','rbqja22@naver.com');
+insert into tblMember values ('cjfrhs5','cjfrhs2','c','cjfrhs5_image.png','cjfrhs5_image.png','김철곤','1990-07-11',26,'m', '010-5466-3325','cjfrhs5@naver.com');
+insert into tblMember values ('dmswn65','dmswn2','c','dmswn65_image.png','dmswn65_image.png','김은주','1975-12-01',41,'f', '010-4566-0031','dmswn65@naver.com');
+insert into tblMember values ('tkdgur5','tkdgur2','c','tkdgur5_image.png','tkdgur5_image.png','전상혁','1992-06-11',24,'m', '010-8787-9965','tkdgur5@naver.com');
+insert into tblMember values ('gdragon','wldyd2','c','gdragon_image.png','gdragon_image.png','권지용','1989-11-27',27,'m', '010-6566-7844','wldyd11@naver.com');
+insert into tblMember values ('sunsun','dudqo2','c','sunsun_image.png','sunsun_image.png','동영배','1990-06-12',26,'m', '010-1351-7547','dudqo132@naver.com');
+insert into tblMember values ('wlsh665','wlsh21','c','wlsh665_image.png','wlsh665_image.png','빈지노','1988-04-01',28,'m', '010-2155-0036','wlsh665@naver.com');
+insert into tblMember values ('huhu8035', 'hu8035', 'c', 'huhu8035_image.png','huhu8035_image.png', '릴보이', '1978-01-20', 28, 'm', '010-4497-0086', 'hu8035@naver.com');
+insert into tblMember values ('dkdldb2','dldb11','c','dkdldb2_image.png','dkdldb2_image.png','아이유','1994-03-12',22,'f', '010-2523-8875','dkdldb2@naver.com');
+
+insert into tblMember values ('tmdgh99','tmdgh2','c','tmdgh99_image.png','tmdgh99_image.png','한승호','1990-11-14',26,'m', '010-6687-6662','tmdgh99@naver.com');
+insert into tblMember values ('dPdls13','dpdls132','c','dPdls13_image.png','dPdls13_image.png','도예인','1991-06-11',25,'f', '010-2225-7899','dPdls13@naver.com');
+insert into tblMember values ('alswl121','alswl112','c','alswl121_image.png','alswl121_image.png','박민지','1991-10-31',25,'f', '010-3365-1322','alswl121@naver.com');
+insert into tblMember values ('wnsduq554','wnsduq2','c','wnsduq554_image.png','wnsduq554_image.png','오준엽','1992-10-22',24,'m', '010-1233-4544','wnsduq554@naver.com');
+insert into tblMember values ('codms1156','codms11','c','codms1156_image.png','codms1156_image.png','이채은','1988-11-06',28,'f', '010-3566-9855','codms1156@naver.com');
+insert into tblMember values ('rjffp1112','rjffp2','c','rjffp1112_image.png','rjffp1112_image.png','이선주','1993-03-25',23,'f', '010-3588-6985','rjffp1112@naver.com');
+insert into tblMember values ('gorrjffp2','gorrjf11','c','gorrjffp2_image.png','gorrjffp2_image.png','황선유','1995-01-30',21,'f', '010-6578-3356','gorrjffp2@naver.com');
+insert into tblMember values ('rhkstjq887','rhkstjq2','c','rhkstjq887_image.png','rhkstjq887_image.png','신관섭','1991-07-24',25,'m', '010-5478-6633','rhkstjq887@naver.com');
+insert into tblMember values ('ehdnd009','ehdnd2','c','ehdnd009_image.png','ehdnd009_image.png','김도웅','1990-11-11',26,'m', '010-6681-4223','ehdnd009@naver.com');
+insert into tblMember values ('dhgus13','dhgus2','c','dhgus13_image.png','dhgus13_image.png','권오현','1991-10-12',25,'m', '010-4465-3352','dhgus13@naver.com');
+insert into tblMember values ('hushAdmin','hushbnb','m','hushAdmin_image.png','hushAdmin_image.png','김허쉬','1963-10-23',27,'f', '010-4982-2008','jyun9095@gmail.com');
+
+
+-- tblCity
+
+insert into tblCity values (citySeq.nextVal, '전체보기');
+insert into tblCity values (citySeq.nextVal, '서울특별시');
+insert into tblCity values (citySeq.nextVal, '부산광역시');
+insert into tblCity values (citySeq.nextVal, '인천광역시');
+insert into tblCity values (citySeq.nextVal, '대전광역시');
+insert into tblCity values (citySeq.nextVal, '광주광역시');
+insert into tblCity values (citySeq.nextVal, '울산광역시');
+insert into tblCity values (citySeq.nextVal, '대구광역시');
+insert into tblCity values (citySeq.nextVal, '강원도');
+insert into tblCity values (citySeq.nextVal, '경기도');
+insert into tblCity values (citySeq.nextVal, '경상남도');
+insert into tblCity values (citySeq.nextVal, '경상북도');
+insert into tblCity values (citySeq.nextVal, '전라남도');
+insert into tblCity values (citySeq.nextVal, '전라북도');
+insert into tblCity values (citySeq.nextVal, '충청남도');
+insert into tblCity values (citySeq.nextVal, '충청북도');
+insert into tblCity values (citySeq.nextVal, '제주도');
+
+-- tblRegion
+insert into tblRegion values (regionSeq.nextVal, 2, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 2, '강남구');
+insert into tblRegion values (regionSeq.nextVal, 2, '강동구');
+insert into tblRegion values (regionSeq.nextVal, 2, '강북구');
+insert into tblRegion values (regionSeq.nextVal, 2, '강서구');
+insert into tblRegion values (regionSeq.nextVal, 2, '관악구');
+insert into tblRegion values (regionSeq.nextVal, 2, '광진구');
+insert into tblRegion values (regionSeq.nextVal, 2, '구로구');
+insert into tblRegion values (regionSeq.nextVal, 2, '금천구');
+insert into tblRegion values (regionSeq.nextVal, 2, '노원구');
+insert into tblRegion values (regionSeq.nextVal, 2, '도봉구');
+insert into tblRegion values (regionSeq.nextVal, 2, '동대문구');
+insert into tblRegion values (regionSeq.nextVal, 2, '동작구');
+insert into tblRegion values (regionSeq.nextVal, 2, '마포구');
+insert into tblRegion values (regionSeq.nextVal, 2, '서초구');
+insert into tblRegion values (regionSeq.nextVal, 2, '서대문구');
+insert into tblRegion values (regionSeq.nextVal, 2, '성동구');
+insert into tblRegion values (regionSeq.nextVal, 2, '성북구');
+insert into tblRegion values (regionSeq.nextVal, 2, '송파구');
+insert into tblRegion values (regionSeq.nextVal, 2, '양천구');
+insert into tblRegion values (regionSeq.nextVal, 2, '영등포구');
+insert into tblRegion values (regionSeq.nextVal, 2, '용산구');
+insert into tblRegion values (regionSeq.nextVal, 2, '은평구');
+insert into tblRegion values (regionSeq.nextVal, 2, '종로구');
+insert into tblRegion values (regionSeq.nextVal, 2, '중구');
+insert into tblRegion values (regionSeq.nextVal, 2, '중랑구');
+
+
+insert into tblRegion values (regionSeq.nextVal, 3, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 3, '강서구');
+insert into tblRegion values (regionSeq.nextVal, 3, '금정구');
+insert into tblRegion values (regionSeq.nextVal, 3, '남구');
+insert into tblRegion values (regionSeq.nextVal, 3, '동래구');
+insert into tblRegion values (regionSeq.nextVal, 3, '동구');
+insert into tblRegion values (regionSeq.nextVal, 3, '부산진구');
+insert into tblRegion values (regionSeq.nextVal, 3, '북구');
+insert into tblRegion values (regionSeq.nextVal, 3, '사상구');
+insert into tblRegion values (regionSeq.nextVal, 3, '사하구');
+insert into tblRegion values (regionSeq.nextVal, 3, '서구');
+insert into tblRegion values (regionSeq.nextVal, 3, '연제구');
+insert into tblRegion values (regionSeq.nextVal, 3, '수영구');
+insert into tblRegion values (regionSeq.nextVal, 3, '영도구');
+insert into tblRegion values (regionSeq.nextVal, 3, '중구');
+insert into tblRegion values (regionSeq.nextVal, 3, '해운대구');
+insert into tblRegion values (regionSeq.nextVal, 3, '기장구');
+
+
+insert into tblRegion values (regionSeq.nextVal, 4, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 4, '계양구');
+insert into tblRegion values (regionSeq.nextVal, 4, '남구');
+insert into tblRegion values (regionSeq.nextVal, 4, '남동구');
+insert into tblRegion values (regionSeq.nextVal, 4, '부평구');
+insert into tblRegion values (regionSeq.nextVal, 4, '동구');
+insert into tblRegion values (regionSeq.nextVal, 4, '서구');
+insert into tblRegion values (regionSeq.nextVal, 4, '연수구');
+insert into tblRegion values (regionSeq.nextVal, 4, '강화군');
+insert into tblRegion values (regionSeq.nextVal, 4, '중구');
+insert into tblRegion values (regionSeq.nextVal, 4, '옹진군');
+
+insert into tblRegion values (regionSeq.nextVal, 5, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 5, '대덕구');
+insert into tblRegion values (regionSeq.nextVal, 5, '동구');
+insert into tblRegion values (regionSeq.nextVal, 5, '서구');
+insert into tblRegion values (regionSeq.nextVal, 5, '중구');
+insert into tblRegion values (regionSeq.nextVal, 5, '유성구');
+
+insert into tblRegion values (regionSeq.nextVal, 6, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 6, '광산구');
+insert into tblRegion values (regionSeq.nextVal, 6, '남구');
+insert into tblRegion values (regionSeq.nextVal, 6, '동구');
+insert into tblRegion values (regionSeq.nextVal, 6, '북구');
+insert into tblRegion values (regionSeq.nextVal, 6, '서구');
+
+insert into tblRegion values (regionSeq.nextVal, 7, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 7, '남구');
+insert into tblRegion values (regionSeq.nextVal, 7, '동구');
+insert into tblRegion values (regionSeq.nextVal, 7, '북구');
+insert into tblRegion values (regionSeq.nextVal, 7, '중구');
+insert into tblRegion values (regionSeq.nextVal, 7, '울주군');
+
+insert into tblRegion values (regionSeq.nextVal, 8, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 8, '남구');
+insert into tblRegion values (regionSeq.nextVal, 8, '달서구');
+insert into tblRegion values (regionSeq.nextVal, 8, '동구');
+insert into tblRegion values (regionSeq.nextVal, 8, '북구');
+insert into tblRegion values (regionSeq.nextVal, 8, '서구');
+insert into tblRegion values (regionSeq.nextVal, 8, '수성구');
+insert into tblRegion values (regionSeq.nextVal, 8, '중구');
+insert into tblRegion values (regionSeq.nextVal, 8, '달성구');
+
+insert into tblRegion values (regionSeq.nextVal, 9, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 9, '원주시');
+insert into tblRegion values (regionSeq.nextVal, 9, '강릉시');
+insert into tblRegion values (regionSeq.nextVal, 9, '동해시');
+insert into tblRegion values (regionSeq.nextVal, 9, '삼척시');
+insert into tblRegion values (regionSeq.nextVal, 9, '속초시');
+insert into tblRegion values (regionSeq.nextVal, 9, '춘천시');
+insert into tblRegion values (regionSeq.nextVal, 9, '태백시');
+insert into tblRegion values (regionSeq.nextVal, 9, '고성군');
+insert into tblRegion values (regionSeq.nextVal, 9, '양구군');
+insert into tblRegion values (regionSeq.nextVal, 9, '양양군');
+insert into tblRegion values (regionSeq.nextVal, 9, '영월군');
+insert into tblRegion values (regionSeq.nextVal, 9, '인제군');
+insert into tblRegion values (regionSeq.nextVal, 9, '정선군');
+insert into tblRegion values (regionSeq.nextVal, 9, '철원군');
+insert into tblRegion values (regionSeq.nextVal, 9, '평창군');
+insert into tblRegion values (regionSeq.nextVal, 9, '홍천군');
+insert into tblRegion values (regionSeq.nextVal, 9, '횡성군');
+insert into tblRegion values (regionSeq.nextVal, 9, '화천군');
+
+insert into tblRegion values (regionSeq.nextVal, 10, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 10, '고양시덕양구');
+insert into tblRegion values (regionSeq.nextVal, 10, '고양시일산구');
+insert into tblRegion values (regionSeq.nextVal, 10, '광명시');
+insert into tblRegion values (regionSeq.nextVal, 10, '과천시');
+insert into tblRegion values (regionSeq.nextVal, 10, '광주시');
+insert into tblRegion values (regionSeq.nextVal, 10, '구리시');
+insert into tblRegion values (regionSeq.nextVal, 10, '군포시');
+insert into tblRegion values (regionSeq.nextVal, 10, '남양주시');
+insert into tblRegion values (regionSeq.nextVal, 10, '김포시');
+insert into tblRegion values (regionSeq.nextVal, 10, '부천시소사구');
+insert into tblRegion values (regionSeq.nextVal, 10, '동두천시');
+insert into tblRegion values (regionSeq.nextVal, 10, '부천시오정구');
+insert into tblRegion values (regionSeq.nextVal, 10, '부천시원미구');
+insert into tblRegion values (regionSeq.nextVal, 10, '성남시분당구');
+insert into tblRegion values (regionSeq.nextVal, 10, '성남시중원구');
+insert into tblRegion values (regionSeq.nextVal, 10, '성남시수정구');
+insert into tblRegion values (regionSeq.nextVal, 10, '수원시권선구');
+insert into tblRegion values (regionSeq.nextVal, 10, '수원시장안구');
+insert into tblRegion values (regionSeq.nextVal, 10, '시흥시');
+insert into tblRegion values (regionSeq.nextVal, 10, '수원시팔달구');
+insert into tblRegion values (regionSeq.nextVal, 10, '안산시');
+insert into tblRegion values (regionSeq.nextVal, 10, '안성시');
+insert into tblRegion values (regionSeq.nextVal, 10, '안양시동안구');
+insert into tblRegion values (regionSeq.nextVal, 10, '안양시만안구');
+insert into tblRegion values (regionSeq.nextVal, 10, '용인시');
+insert into tblRegion values (regionSeq.nextVal, 10, '오산시');
+insert into tblRegion values (regionSeq.nextVal, 10, '의왕시');
+insert into tblRegion values (regionSeq.nextVal, 10, '의정부시');
+insert into tblRegion values (regionSeq.nextVal, 10, '이천시');
+insert into tblRegion values (regionSeq.nextVal, 10, '평택시');
+insert into tblRegion values (regionSeq.nextVal, 10, '파주시');
+insert into tblRegion values (regionSeq.nextVal, 10, '하남시');
+insert into tblRegion values (regionSeq.nextVal, 10, '화성시');
+insert into tblRegion values (regionSeq.nextVal, 10, '양주시');
+insert into tblRegion values (regionSeq.nextVal, 10, '가평군');
+insert into tblRegion values (regionSeq.nextVal, 10, '양평군');
+insert into tblRegion values (regionSeq.nextVal, 10, '여주군');
+insert into tblRegion values (regionSeq.nextVal, 10, '연천군');
+insert into tblRegion values (regionSeq.nextVal, 10, '포천시');
+insert into tblRegion values (regionSeq.nextVal, 10, '평택시');
+insert into tblRegion values (regionSeq.nextVal, 10, '수원시영통구');
+
+insert into tblRegion values (regionSeq.nextVal, 11, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 11, '거제시');
+insert into tblRegion values (regionSeq.nextVal, 11, '김해시');
+insert into tblRegion values (regionSeq.nextVal, 11, '마산시(회원)');
+insert into tblRegion values (regionSeq.nextVal, 11, '마산시(합포)');
+insert into tblRegion values (regionSeq.nextVal, 11, '사천시');
+insert into tblRegion values (regionSeq.nextVal, 11, '밀양시');
+insert into tblRegion values (regionSeq.nextVal, 11, '양산시');
+insert into tblRegion values (regionSeq.nextVal, 11, '진주시');
+insert into tblRegion values (regionSeq.nextVal, 11, '진해시');
+insert into tblRegion values (regionSeq.nextVal, 11, '창원시');
+insert into tblRegion values (regionSeq.nextVal, 11, '통영시');
+insert into tblRegion values (regionSeq.nextVal, 11, '거창군');
+insert into tblRegion values (regionSeq.nextVal, 11, '고성군');
+insert into tblRegion values (regionSeq.nextVal, 11, '산청군');
+insert into tblRegion values (regionSeq.nextVal, 11, '남해군');
+insert into tblRegion values (regionSeq.nextVal, 11, '의령군');
+insert into tblRegion values (regionSeq.nextVal, 11, '창녕군');
+insert into tblRegion values (regionSeq.nextVal, 11, '하동군');
+insert into tblRegion values (regionSeq.nextVal, 11, '함안군');
+insert into tblRegion values (regionSeq.nextVal, 11, '함양군');
+insert into tblRegion values (regionSeq.nextVal, 11, '합천군');
+
+insert into tblRegion values (regionSeq.nextVal, 12, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 12, '경산시');
+insert into tblRegion values (regionSeq.nextVal, 12, '경주시');
+insert into tblRegion values (regionSeq.nextVal, 12, '구미시');
+insert into tblRegion values (regionSeq.nextVal, 12, '김천시');
+insert into tblRegion values (regionSeq.nextVal, 12, '문경시');
+insert into tblRegion values (regionSeq.nextVal, 12, '상주시');
+insert into tblRegion values (regionSeq.nextVal, 12, '안동시');
+insert into tblRegion values (regionSeq.nextVal, 12, '영주시');
+insert into tblRegion values (regionSeq.nextVal, 12, '영천시');
+insert into tblRegion values (regionSeq.nextVal, 12, '포항시북구');
+insert into tblRegion values (regionSeq.nextVal, 12, '포항시남구');
+insert into tblRegion values (regionSeq.nextVal, 12, '고령군');
+insert into tblRegion values (regionSeq.nextVal, 12, '봉화군');
+insert into tblRegion values (regionSeq.nextVal, 12, '성주군');
+insert into tblRegion values (regionSeq.nextVal, 12, '군위군');
+insert into tblRegion values (regionSeq.nextVal, 12, '영양군');
+insert into tblRegion values (regionSeq.nextVal, 12, '영덕군');
+insert into tblRegion values (regionSeq.nextVal, 12, '예천군');
+insert into tblRegion values (regionSeq.nextVal, 12, '울진군');
+insert into tblRegion values (regionSeq.nextVal, 12, '의성군');
+insert into tblRegion values (regionSeq.nextVal, 12, '울릉군');
+insert into tblRegion values (regionSeq.nextVal, 12, '청송군');
+insert into tblRegion values (regionSeq.nextVal, 12, '청도군');
+insert into tblRegion values (regionSeq.nextVal, 12, '칠곡군');
+
+insert into tblRegion values (regionSeq.nextVal, 13, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 13, '광양시');
+insert into tblRegion values (regionSeq.nextVal, 13, '나주시');
+insert into tblRegion values (regionSeq.nextVal, 13, '순천시');
+insert into tblRegion values (regionSeq.nextVal, 13, '목포시');
+insert into tblRegion values (regionSeq.nextVal, 13, '여수시');
+insert into tblRegion values (regionSeq.nextVal, 13, '고흥군');
+insert into tblRegion values (regionSeq.nextVal, 13, '강진군');
+insert into tblRegion values (regionSeq.nextVal, 13, '곡성군');
+insert into tblRegion values (regionSeq.nextVal, 13, '구례군');
+insert into tblRegion values (regionSeq.nextVal, 13, '담양군');
+insert into tblRegion values (regionSeq.nextVal, 13, '무안군');
+insert into tblRegion values (regionSeq.nextVal, 13, '보성군');
+insert into tblRegion values (regionSeq.nextVal, 13, '신안군');
+insert into tblRegion values (regionSeq.nextVal, 13, '영광군');
+insert into tblRegion values (regionSeq.nextVal, 13, '영암군');
+insert into tblRegion values (regionSeq.nextVal, 13, '완도군');
+insert into tblRegion values (regionSeq.nextVal, 13, '장성군');
+insert into tblRegion values (regionSeq.nextVal, 13, '진도군');
+insert into tblRegion values (regionSeq.nextVal, 13, '장흥군');
+insert into tblRegion values (regionSeq.nextVal, 13, '함평군');
+insert into tblRegion values (regionSeq.nextVal, 13, '해남군');
+insert into tblRegion values (regionSeq.nextVal, 13, '화순군');
+
+insert into tblRegion values (regionSeq.nextVal, 14, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 14, '군산시');
+insert into tblRegion values (regionSeq.nextVal, 14, '김제시');
+insert into tblRegion values (regionSeq.nextVal, 14, '남원시');
+insert into tblRegion values (regionSeq.nextVal, 14, '익산시');
+insert into tblRegion values (regionSeq.nextVal, 14, '전주시덕진구');
+insert into tblRegion values (regionSeq.nextVal, 14, '전주시완산구');
+insert into tblRegion values (regionSeq.nextVal, 14, '고창군');
+insert into tblRegion values (regionSeq.nextVal, 14, '정읍시');
+insert into tblRegion values (regionSeq.nextVal, 14, '무주군');
+insert into tblRegion values (regionSeq.nextVal, 14, '순창군');
+insert into tblRegion values (regionSeq.nextVal, 14, '부안군');
+insert into tblRegion values (regionSeq.nextVal, 14, '완주군');
+insert into tblRegion values (regionSeq.nextVal, 14, '임실군');
+insert into tblRegion values (regionSeq.nextVal, 14, '장수군');
+insert into tblRegion values (regionSeq.nextVal, 14, '지안군');
+
+insert into tblRegion values (regionSeq.nextVal, 15, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 15, '공주시');
+insert into tblRegion values (regionSeq.nextVal, 15, '논산시');
+insert into tblRegion values (regionSeq.nextVal, 15, '보령시');
+insert into tblRegion values (regionSeq.nextVal, 15, '서산시');
+insert into tblRegion values (regionSeq.nextVal, 15, '아산시');
+insert into tblRegion values (regionSeq.nextVal, 15, '천안시');
+insert into tblRegion values (regionSeq.nextVal, 15, '금산군');
+insert into tblRegion values (regionSeq.nextVal, 15, '부여군');
+insert into tblRegion values (regionSeq.nextVal, 15, '당진군');
+insert into tblRegion values (regionSeq.nextVal, 15, '서천군');
+insert into tblRegion values (regionSeq.nextVal, 15, '연기군');
+insert into tblRegion values (regionSeq.nextVal, 15, '예산군');
+insert into tblRegion values (regionSeq.nextVal, 15, '청양군');
+insert into tblRegion values (regionSeq.nextVal, 15, '홍성군');
+insert into tblRegion values (regionSeq.nextVal, 15, '태안군');
+insert into tblRegion values (regionSeq.nextVal, 15, '세종시');
+
+insert into tblRegion values (regionSeq.nextVal, 16, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 16, '제천시');
+insert into tblRegion values (regionSeq.nextVal, 16, '청주시상당구');
+insert into tblRegion values (regionSeq.nextVal, 16, '청주시흥덕구');
+insert into tblRegion values (regionSeq.nextVal, 16, '충주시');
+insert into tblRegion values (regionSeq.nextVal, 16, '괴산시');
+insert into tblRegion values (regionSeq.nextVal, 16, '단양군');
+insert into tblRegion values (regionSeq.nextVal, 16, '보은군');
+insert into tblRegion values (regionSeq.nextVal, 16, '여옹군');
+insert into tblRegion values (regionSeq.nextVal, 16, '옥천군');
+insert into tblRegion values (regionSeq.nextVal, 16, '청원군');
+insert into tblRegion values (regionSeq.nextVal, 16, '음성군');
+insert into tblRegion values (regionSeq.nextVal, 16, '진천군');
+
+insert into tblRegion values (regionSeq.nextVal, 17, '전체보기');
+insert into tblRegion values (regionSeq.nextVal, 17, '서귀포중문권');
+insert into tblRegion values (regionSeq.nextVal, 17, '제주시권');
+insert into tblRegion values (regionSeq.nextVal, 17, '북제주군(동부권)');
+insert into tblRegion values (regionSeq.nextVal, 17, '남제주군(서부권)');
+
+-- tblAccommodation
+
+insert into tblAccommodation values ('BU001', 42, '해운대 마린시티 펜션', '부산광역시 해운대구 ORDEW 빌딩', 35.184130, 129.157600, 'BU001_main.png','BU001_main.png', 'PM1500', 'AM1100', 26000, 'n', 3, 1, 3, 1,'f');
+insert into tblAccommodation values ('BU002', 42, '해수욕장 펜션', '부산광역시 해운대구 광안동',  35.176904, 129.159660,'BU002_main.png','BU002_main.png', 'PM1500', 'AM1100', 48000, 'y', 3, 1, 1, 0,'f');
+insert into tblAccommodation values ('BU003', 42, '편안한 홈 펜션', '부산광역시 해운대구 달맞이길 117번길',   35.179711, 129.163265,'BU003_main.png','BU003_main.png', 'PM1500', 'AM1200', 60000, 'y', 3, 1, 1, 0,'f');
+insert into tblAccommodation values ('BU004', 42, '달맞이 펜션', '부산광역시 해운대구 달맞이길 삼익빌라', 35.182902,  129.175711, 'BU004_main.png','BU004_main.png', 'PM1400', 'AM1100', 70000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU005', 42, '슈퍼모던 펜션', '부산광역시 해운대구 우동', 35.176869, 129.164166,'BU005_main.png','BU005_main.png', 'PM1400', 'AM1100', 32000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('BU006', 42, '프리미엄 펜션', '부산광역시 해운대구 우동 541번지',35.172660, 129.163222, 'BU006_main.png','BU006_main.png', 'PM1400', 'AM1100', 25000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('BU007', 42, '우아 펜션', '부산광역시 해운대구 분포로', 35.170836, 129.150133, 'BU007_main.png','BU007_main.png', 'PM1500', 'AM1100', 50000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('BU008', 42, '오션뷰 펜션', '부산광역시 해운대구 570번길', 35.171783, 129.157858, 'BU008_main.png','BU008_main.png', 'PM1500', 'AM1100', 59000, 'y', 3, 1, 1, 0,'f');
+insert into tblAccommodation values ('BU009', 42, '워커 펜션', '부산광역시 해운대구 중동', 35.178623, 129.164424, 'BU009_main.png','BU009_main.png', 'PM1500', 'AM1100', 49600, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('BU010', 42, '펄시티 펜션', '부산광역시 해운대구 좌1동', 35.177851, 129.155433, 'BU010_main.png','BU010_main.png', 'PM1400', 'AM1100', 40000, 'y', 3, 1, 1, 1,'f');
+
+insert into tblAccommodation values ('BU020', 42, '마지막 펜션', '부산광역시 해운대구 좌동 산128', 35.173837,129.1855815, 'BU060_main.png', 'BU060_main.png', 'PM1700', 'AM1800', 45000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('BU021', 42, '와리가리 펜션', '부산광역시 해운대구 우1동 622-25', 35.158567,129.158251, 'BU051_main.png', 'BU051_main.png', 'PM1700', 'AM1800', 35000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU022', 42, '위잉위잉 펜션', '부산광역시 해운대구 우1동 704-20', 35.1575148,129.1561156, 'BU052_main.png', 'BU052_main.png', 'PM1700', 'AM1800', 25000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('BU023', 42, '부산 맙소사 펜션', '부산광역시 해운대구 중동 991-1', 35.1567724,129.1764876, 'BU053_main.png', 'BU053_main.png', 'PM1700', 'AM1800', 40000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU024', 42, '멋진 헛간 펜션', '부산광역시 해운대구 중동 산42-9', 35.1561472,129.1785903, 'BU054_main.png', 'BU054_main.png', 'PM1600', 'AM1800', 20000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU025', 42, '터프쿠키 펜션', '부산광역시 해운대구 중동 산29-1', 35.1614562,129.1865389, 'BU055_main.png', 'BU055_main.png', 'PM1600', 'AM1800', 50000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('BU026', 42, '피어팩 펜션', '부산광역시 해운대구 중동 산15-3', 35.1646146,129.1881105, 'BU056_main.png', 'BU056_main.png', 'PM1600', 'AM1800', 30000, 'y', 3, 2, 2, 2,'f');
+insert into tblAccommodation values ('BU027', 42, '업템포 펜션', '부산광역시 해운대구 중동 산42-1', 35.1663755,129.1872262, 'BU057_main.png', 'BU057_main.png', 'PM1700', 'AM1800', 20000, 'y', 3, 2, 2, 2,'f');
+insert into tblAccommodation values ('BU028', 42, '부산 인프라 펜션', '부산광역시 해운대구 중동 산14-1', 35.1660152,129.1885832, 'BU058_main.png', 'BU058_main.png', 'PM1800', 'AM1800', 45000, 'y', 3, 2, 2, 2,'f');
+insert into tblAccommodation values ('BU029', 42, '브래드 펜션', '부산광역시 해운대구 좌동 산132-2', 35.1712794,129.1880088, 'BU059_main.png', 'BU059_main.png', 'BU059_main.png', 'PM1800', 'AM1800', 55000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU030', 42, '노벨라 펜션', '부산광역시 해운대구 좌동 산130', 35.1719146,129.1856491, 'BU030_main.png', 'BU030_main.png', 'PM1600', 'AM1100', 40000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU031', 42, '더버드 펜션', '부산광역시 해운대구 우1동 1174-1', 35.1621005,129.1532377, 'BU031_main.png', 'BU031_main.png', 'PM1500', 'AM1200', 50000, 'y', 3, 2, 3, 2,'f');
+insert into tblAccommodation values ('BU032', 42, '샤또드스파 펜션', '부산광역시 해운대구 우1동 산122', 35.1615238,129.1526566, 'BU032_main.png', 'BU032_main.png', 'PM1100', 'AM1600', 70000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU033', 42, '하늘과구름사이 펜션', '부산광역시 해운대구 중동 1392-45', 35.1603187,129.1618946, 'BU033_main.png', 'BU033_main.png', 'PM1200', 'AM1700', 60000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU034', 42, '아리 펜션', '부산광역시 해운대구 중동 1410-25', 35.1598037,129.1630562, 'BU034_main.png', 'BU034_main.png', 'PM1300', 'AM1700', 80000, 'y', 3, 2, 2, 2,'f');
+insert into tblAccommodation values ('BU035', 42, '오션뷰 펜션', '부산광역시 해운대구 중2동 산37-1', 35.1598421,129.1855968, 'BU035_main.png', 'BU035_main.png', 'PM1400', 'AM1500', 99000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU036', 42, '풀빌라 디오르 펜션', '부산광역시 해운대구 중동 산3-4', 35.1637653,129.1946226, 'BU036_main.png', 'BU036_main.png', 'PM1100', 'AM1500', 25000, 'y', 3, 1, 2, 2,'f');
+insert into tblAccommodation values ('BU037', 42, '고릴라 펜션', '부산광역시 해운대구 송정동 산27-1', 35.1866648,129.198179, 'BU037_main.png', 'BU037_main.png', 'PM1500', 'AM1600', 60000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU038', 42, '헐크 펜션', '부산광역시 해운대구 송정동 700-1', 35.1815482,129.1945643, 'BU038_main.png', 'BU038_main.png', 'PM1700', 'AM1600', 66000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU039', 42, '끼룩끼룩 펜션', '부산광역시 해운대구 송정동 713-3', 35.177031,129.1979882, 'BU039_main.png', 'BU039_main.png', 'PM1700', 'AM1800', 30000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU040', 42, '두루치기 펜션', '부산광역시 해운대구 중동 505-5', 35.1626002,129.1929514, 'BU040_main.png', 'BU040_main.png', 'PM1600', 'AM1800', 40000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU041', 42, '부산 카라 펜션', '부산광역시 해운대구 중동 산3-4', 35.1637653,129.1946226, 'BU041_main.png', 'BU041_main.png', 'PM1700', 'AM1800', 60000, 'y', 3, 1, 5, 1,'f');
+insert into tblAccommodation values ('BU042', 42, '부산 파워 펜션', '부산광역시 해운대구 우1동 548-41', 35.1628447,129.1587518, 'BU042_main.png', 'BU042_main.png', 'PM1700', 'AM1800', 20000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU043', 42, '부산 갈매기 펜션', '부산광역시 해운대구 우1동 762-46', 35.1593964,129.1535244, 'BU043_main.png', 'BU043_main.png', 'PM1700', 'AM1800', 30000, 'y', 3, 1, 3, 1,'f');
+insert into tblAccommodation values ('BU044', 42, '부산 사나이 펜션', '부산광역시 해운대구 우1동 762-44', 35.1594454,129.1531882, 'BU044_main.png', 'BU044_main.png', 'PM1600', 'AM1800', 30000, 'y', 3, 1, 1, 1,'m');
+insert into tblAccommodation values ('BU045', 42, '쇼미더 머니 펜션', '부산광역시 해운대구 우1동 622-26', 35.1584577,129.1579004, 'BU045_main.png', 'BU045_main.png', 'PM1700', 'AM1800', 46000, 'y', 3, 1, 1, 1,'m');
+insert into tblAccommodation values ('BU046', 42, '부산 슈퍼스타 펜션', '부산광역시 해운대구 우1동 706-5', 35.1563257,129.1545369, 'BU046_main.png', 'BU046_main.png', 'PM1800', 'AM1700', 40000, 'y', 3, 1, 1, 1,'m');
+insert into tblAccommodation values ('BU047', 42, '디지몬 펜션', '부산광역시 해운대구 우1동 713-1', 35.1525219,129.1500779, 'BU047_main.png', 'BU047_main.png', 'PM1800', 'AM1700', 38000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU048', 42, '어드벤처 펜션', '부산광역시 해운대구 우1동 산119-2', 35.1627849,129.1510389, 'BU048_main.png', 'BU048_main.png', 'PM1600', 'AM1700', 40000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU049', 42, '오아시스 펜션', '부산광역시 해운대구 우2동 산144-1', 35.1696241,129.145189, 'BU049_main.png', 'BU049_main.png', 'PM1800', 'AM1700', 55000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('BU050', 42, '말할수없는 펜션', '부산광역시 해운대구 우2동 1127-61', 35.1661694,129.1355786, 'BU050_main.png', 'BU050_main.png', 'PM1800', 'AM1700', 55000, 'y', 3, 1, 1, 1,'f');
+
+insert into tblAccommodation values ('JE001', 261, '제주 아르미스 펜션', '제주도 제주시 영평동', 33.429439, 126.583446, 'JE001_main.png', 'JE001_main.png', 'PM1600', 'AM1000', 20000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('JE002', 261, '제주 녹색마을 펜션', '제주도 제주시 용강동', 33.431650, 126.600108, 'JE002_main.png', 'JE002_main.png', 'PM1600', 'AM1000', 40000, 'y', 3, 2, 2, 1,'f');
+insert into tblAccommodation values ('JE003', 261, '자연향기 펜션', '제주도 제주시 봉개동 241-6', 33.4544688,126.6100373, 'JE003_main.png', 'JE003_main.png', 'PM1600', 'AM1000', 40000, 'y', 3, 2, 2, 1,'m');
+insert into tblAccommodation values ('JE004', 261, '설레임 펜션', '제주도 제주시 화북동 1995-1', 33.521461,126.563661, 'JE004_main.png', 'JE004_main.png', 'PM1700', 'AM1100', 21000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('JE005', 261, '노을담은 펜션', '제주도 제주시 내도동 772', 33.4900585,126.4374272, 'JE005_main.png', 'JE005_main.png', 'PM1600', 'AM1100', 45000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('JE006', 261, '제주 새벽종 펜션', '제주도 제주시 외도일동 1521-4', 33.4868114,126.4292982, 'JE006_main.png', 'JE006_main.png', 'PM1500', 'AM1100', 31000, 'y', 3, 2, 3, 1,'f');
+insert into tblAccommodation values ('JE007', 261, '산내들 펜션', '제주도 제주시 조천읍 신촌리 1765-22', 33.5337061,126.6235968, 'JE007_main.png', 'JE007_main.png', 'PM1500', 'AM1100', 77000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('JE008', 261, '정이넘치는 펜션', '제주도 제주시 서사로10길 16-2', 33.506536,126.518466, 'JE008_main.png', 'JE008_main.png', 'PM1600', 'AM1100', 22000, 'y', 3, 1, 4, 2,'f');
+insert into tblAccommodation values ('JE009', 261, '제주 까사데쏠 펜션', '제주도 제주시 용담이동 2701-32', 33.5037213,126.5083969, 'JE009_main.png', 'JE009_main.png', 'PM1500', 'AM1200', 21500, 'y', 3, 2, 2, 2,'f');
+insert into tblAccommodation values ('JE010', 261, '제주 세컨라운지 펜션', '제주도 제주시 이도일동 1268-4', 33.5054874,126.5298107, 'JE010_main.png', 'JE010_main.png', 'PM1600', 'AM1200', 20000, 'y', 3, 2, 3, 2,'f');
+
+insert into tblAccommodation values ('JN011', 195, '예은 펜션', '전라남도 여수시 신월동 산65', 34.737642,127.6932086, 'JN001_main.png', 'JN001_main.png', 'PM1700', 'AM1800', 25000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('JB006', 218, '지붕 펜션', '전라북도 전주시 덕진구 팔복동1가 197-9', 35.8555321,127.1105259, 'JB001_main.png', 'JB001_main.png', 'PM1700', 'AM1800', 35000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('KK016', 132, '파주툭툭 펜션', '경기도 파주시 금능동 산26-3', 37.7590251,126.7844447, 'KK001_main.png', 'KK001_main.png', 'PM1700', 'AM1800', 35000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('KB001', 167, '기대 펜션', '경상북도 경주시 구황동 155-1', 35.8359617,129.2414715, 'KB001_main.png', 'KB001_main.png', 'PM1600', 'AM1700', 45000, 'y', 3, 1, 1, 1,'f');
+insert into tblAccommodation values ('US013', 68, '마일리지 펜션', '울산광역시 남구 선암동 산81-6', 35.50907,129.3303129, 'US001_main.png', 'US001_main.png', 'PM1600', 'AM1500', 35000, 'y', 3, 1, 2, 1,'f');
+insert into tblAccommodation values ('SE011', 2, '스폰서 펜션', '서울특별시 강남구 개포2동 116-3', 37.4818492,127.0734674, 'SE001_main.png', 'SE001_main.png', 'PM1600', 'AM1700', 25000, 'y', 3, 1, 1, 1,'f');
+
+-- tblDetailImg
+
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU001', 'BU001_detail01.png','BU001_detail01.png', 'BU001_detail02.png', 'BU001_detail02.png', 'BU001_detail03.png', 'BU001_detail03.png', 'BU001_detail04.png', 'BU001_detail04.png', 'BU001_detail05.png', 'BU001_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU002', 'BU002_detail01.png','BU002_detail01.png', 'BU002_detail02.png', 'BU002_detail02.png', 'BU002_detail03.png', 'BU002_detail03.png', 'BU002_detail04.png', 'BU002_detail04.png', 'BU002_detail05.png', 'BU002_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU003', 'BU003_detail01.png','BU003_detail01.png', 'BU003_detail02.png', 'BU003_detail02.png', 'BU003_detail03.png', 'BU003_detail03.png', 'BU003_detail04.png', 'BU003_detail04.png', 'BU003_detail05.png', 'BU003_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU004', 'BU004_detail01.png','BU004_detail01.png', 'BU004_detail02.png', 'BU004_detail02.png', 'BU004_detail03.png', 'BU004_detail03.png', 'BU004_detail04.png', 'BU004_detail04.png', 'BU004_detail05.png', 'BU004_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU005', 'BU005_detail01.png','BU005_detail01.png', 'BU005_detail02.png', 'BU005_detail02.png', 'BU005_detail03.png', 'BU005_detail03.png', 'BU005_detail04.png', 'BU005_detail04.png', 'BU005_detail05.png', 'BU005_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU006', 'BU006_detail01.png','BU006_detail01.png', 'BU006_detail02.png', 'BU006_detail02.png', 'BU006_detail03.png', 'BU006_detail03.png', 'BU006_detail04.png', 'BU006_detail04.png', 'BU006_detail05.png', 'BU006_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU007', 'BU007_detail01.png','BU007_detail01.png', 'BU007_detail02.png', 'BU007_detail02.png', 'BU007_detail03.png', 'BU007_detail03.png', 'BU007_detail04.png', 'BU007_detail04.png', 'BU007_detail05.png', 'BU007_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU008', 'BU008_detail01.png','BU008_detail01.png', 'BU008_detail02.png', 'BU008_detail02.png', 'BU008_detail03.png', 'BU008_detail03.png', 'BU008_detail04.png', 'BU008_detail04.png', 'BU008_detail05.png', 'BU008_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU009', 'BU009_detail01.png','BU009_detail01.png', 'BU009_detail02.png', 'BU009_detail02.png', 'BU009_detail03.png', 'BU009_detail03.png', 'BU009_detail04.png', 'BU009_detail04.png', 'BU009_detail05.png', 'BU009_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU010', 'BU010_detail01.png','BU010_detail01.png', 'BU010_detail02.png', 'BU010_detail02.png', 'BU010_detail03.png', 'BU010_detail03.png', 'BU010_detail04.png', 'BU010_detail04.png', 'BU010_detail05.png', 'BU010_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU020', 'BU020_detail01.png','BU020_detail01.png', 'BU020_detail02.png', 'BU020_detail02.png', 'BU020_detail03.png', 'BU020_detail03.png', 'BU020_detail04.png', 'BU020_detail04.png', 'BU020_detail05.png', 'BU020_detail05.png');
+
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU021', 'BU021_detail01.png','BU021_detail01.png', 'BU021_detail02.png', 'BU021_detail02.png', 'BU021_detail03.png', 'BU021_detail03.png', 'BU021_detail04.png', 'BU021_detail04.png', 'BU021_detail05.png', 'BU021_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU022', 'BU022_detail01.png','BU022_detail01.png', 'BU022_detail02.png', 'BU022_detail02.png', 'BU022_detail03.png', 'BU022_detail03.png', 'BU022_detail04.png', 'BU022_detail04.png', 'BU022_detail05.png', 'BU022_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU023', 'BU023_detail01.png','BU023_detail01.png', 'BU023_detail02.png', 'BU023_detail02.png', 'BU023_detail03.png', 'BU023_detail03.png', 'BU023_detail04.png', 'BU023_detail04.png', 'BU023_detail05.png', 'BU023_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU024', 'BU024_detail01.png','BU024_detail01.png', 'BU024_detail02.png', 'BU024_detail02.png', 'BU024_detail03.png', 'BU024_detail03.png', 'BU024_detail04.png', 'BU024_detail04.png', 'BU024_detail05.png', 'BU024_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU025', 'BU025_detail01.png','BU025_detail01.png', 'BU025_detail02.png', 'BU025_detail02.png', 'BU025_detail03.png', 'BU025_detail03.png', 'BU025_detail04.png', 'BU025_detail04.png', 'BU025_detail05.png', 'BU025_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU026', 'BU026_detail01.png','BU026_detail01.png', 'BU026_detail02.png', 'BU026_detail02.png', 'BU026_detail03.png', 'BU026_detail03.png', 'BU026_detail04.png', 'BU026_detail04.png', 'BU026_detail05.png', 'BU026_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU027', 'BU027_detail01.png','BU027_detail01.png', 'BU027_detail02.png', 'BU027_detail02.png', 'BU027_detail03.png', 'BU027_detail03.png', 'BU027_detail04.png', 'BU027_detail04.png', 'BU027_detail05.png', 'BU027_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU028', 'BU028_detail01.png','BU028_detail01.png', 'BU028_detail02.png', 'BU028_detail02.png', 'BU028_detail03.png', 'BU028_detail03.png', 'BU028_detail04.png', 'BU028_detail04.png', 'BU028_detail05.png', 'BU028_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU029', 'BU029_detail01.png','BU029_detail01.png', 'BU029_detail02.png', 'BU029_detail02.png', 'BU029_detail03.png', 'BU029_detail03.png', 'BU029_detail04.png', 'BU029_detail04.png', 'BU029_detail05.png', 'BU029_detail05.png');
+
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU030', 'BU030_detail01.png','BU030_detail01.png', 'BU030_detail02.png', 'BU030_detail02.png', 'BU030_detail03.png', 'BU030_detail03.png', 'BU030_detail04.png', 'BU030_detail04.png', 'BU030_detail05.png', 'BU030_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU031', 'BU031_detail01.png','BU031_detail01.png', 'BU031_detail02.png', 'BU031_detail02.png', 'BU031_detail03.png', 'BU031_detail03.png', 'BU031_detail04.png', 'BU031_detail04.png', 'BU031_detail05.png', 'BU031_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU032', 'BU032_detail01.png','BU032_detail01.png', 'BU032_detail02.png', 'BU032_detail02.png', 'BU032_detail03.png', 'BU032_detail03.png', 'BU032_detail04.png', 'BU032_detail04.png', 'BU032_detail05.png', 'BU032_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU033', 'BU033_detail01.png','BU033_detail01.png', 'BU033_detail02.png', 'BU033_detail02.png', 'BU033_detail03.png', 'BU033_detail03.png', 'BU033_detail04.png', 'BU033_detail04.png', 'BU033_detail05.png', 'BU033_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU034', 'BU034_detail01.png','BU034_detail01.png', 'BU034_detail02.png', 'BU034_detail02.png', 'BU034_detail03.png', 'BU034_detail03.png', 'BU034_detail04.png', 'BU034_detail04.png', 'BU034_detail05.png', 'BU034_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU035', 'BU035_detail01.png','BU035_detail01.png', 'BU035_detail02.png', 'BU035_detail02.png', 'BU035_detail03.png', 'BU035_detail03.png', 'BU035_detail04.png', 'BU035_detail04.png', 'BU035_detail05.png', 'BU035_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU036', 'BU036_detail01.png','BU036_detail01.png', 'BU036_detail02.png', 'BU036_detail02.png', 'BU036_detail03.png', 'BU036_detail03.png', 'BU036_detail04.png', 'BU036_detail04.png', 'BU036_detail05.png', 'BU036_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU037', 'BU037_detail01.png','BU037_detail01.png', 'BU037_detail02.png', 'BU037_detail02.png', 'BU037_detail03.png', 'BU037_detail03.png', 'BU037_detail04.png', 'BU037_detail04.png', 'BU037_detail05.png', 'BU037_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU038', 'BU038_detail01.png','BU038_detail01.png', 'BU038_detail02.png', 'BU038_detail02.png', 'BU038_detail03.png', 'BU038_detail03.png', 'BU038_detail04.png', 'BU038_detail04.png', 'BU038_detail05.png', 'BU038_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU039', 'BU039_detail01.png','BU039_detail01.png', 'BU039_detail02.png', 'BU039_detail02.png', 'BU039_detail03.png', 'BU039_detail03.png', 'BU039_detail04.png', 'BU039_detail04.png', 'BU039_detail05.png', 'BU039_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU040', 'BU040_detail01.png','BU040_detail01.png', 'BU040_detail02.png', 'BU040_detail02.png', 'BU040_detail03.png', 'BU040_detail03.png', 'BU040_detail04.png', 'BU040_detail04.png', 'BU040_detail05.png', 'BU040_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU041', 'BU041_detail01.png','BU041_detail01.png', 'BU041_detail02.png', 'BU041_detail02.png', 'BU041_detail03.png', 'BU041_detail03.png', 'BU041_detail04.png', 'BU041_detail04.png', 'BU041_detail05.png', 'BU041_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU042', 'BU042_detail01.png','BU042_detail01.png', 'BU042_detail02.png', 'BU042_detail02.png', 'BU042_detail03.png', 'BU042_detail03.png', 'BU042_detail04.png', 'BU042_detail04.png', 'BU042_detail05.png', 'BU042_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU043', 'BU043_detail01.png','BU043_detail01.png', 'BU043_detail02.png', 'BU043_detail02.png', 'BU043_detail03.png', 'BU043_detail03.png', 'BU043_detail04.png', 'BU043_detail04.png', 'BU043_detail05.png', 'BU043_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU044', 'BU044_detail01.png','BU044_detail01.png', 'BU044_detail02.png', 'BU044_detail02.png', 'BU044_detail03.png', 'BU044_detail03.png', 'BU044_detail04.png', 'BU044_detail04.png', 'BU044_detail05.png', 'BU044_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU045', 'BU045_detail01.png','BU045_detail01.png', 'BU045_detail02.png', 'BU045_detail02.png', 'BU045_detail03.png', 'BU045_detail03.png', 'BU045_detail04.png', 'BU045_detail04.png', 'BU045_detail05.png', 'BU045_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU046', 'BU046_detail01.png','BU046_detail01.png', 'BU046_detail02.png', 'BU046_detail02.png', 'BU046_detail03.png', 'BU046_detail03.png', 'BU046_detail04.png', 'BU046_detail04.png', 'BU046_detail05.png', 'BU046_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU047', 'BU037_detail01.png','BU047_detail01.png', 'BU047_detail02.png', 'BU047_detail02.png', 'BU047_detail03.png', 'BU047_detail03.png', 'BU047_detail04.png', 'BU047_detail04.png', 'BU047_detail05.png', 'BU047_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU048', 'BU038_detail01.png','BU048_detail01.png', 'BU048_detail02.png', 'BU048_detail02.png', 'BU048_detail03.png', 'BU048_detail03.png', 'BU048_detail04.png', 'BU048_detail04.png', 'BU048_detail05.png', 'BU048_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU049', 'BU039_detail01.png','BU049_detail01.png', 'BU049_detail02.png', 'BU049_detail02.png', 'BU049_detail03.png', 'BU049_detail03.png', 'BU049_detail04.png', 'BU049_detail04.png', 'BU049_detail05.png', 'BU049_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'BU050', 'BU039_detail01.png','BU050_detail01.png', 'BU050_detail02.png', 'BU050_detail02.png', 'BU050_detail03.png', 'BU050_detail03.png', 'BU050_detail04.png', 'BU050_detail04.png', 'BU050_detail05.png', 'BU050_detail05.png');
+
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE001', 'JE001_detail01.png','JE001_detail01.png', 'JE001_detail02.png', 'JE001_detail02.png', 'JE001_detail03.png', 'JE001_detail03.png', 'JE001_detail04.png', 'JE001_detail04.png', 'JE001_detail05.png', 'JE001_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE002', 'JE002_detail01.png','JE002_detail01.png', 'JE002_detail02.png', 'JE002_detail02.png', 'JE002_detail03.png', 'JE002_detail03.png', 'JE002_detail04.png', 'JE002_detail04.png', 'JE002_detail05.png', 'JE002_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE003', 'JE003_detail01.png','JE003_detail01.png', 'JE003_detail02.png', 'JE003_detail02.png', 'JE003_detail03.png', 'JE003_detail03.png', 'JE003_detail04.png', 'JE003_detail04.png', 'JE003_detail05.png', 'JE003_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE004', 'JE004_detail01.png','JE004_detail01.png', 'JE004_detail02.png', 'JE004_detail02.png', 'JE004_detail03.png', 'JE004_detail03.png', 'JE004_detail04.png', 'JE004_detail04.png', 'JE004_detail05.png', 'JE004_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE005', 'JE005_detail01.png','JE005_detail01.png', 'JE005_detail02.png', 'JE005_detail02.png', 'JE005_detail03.png', 'JE005_detail03.png', 'JE005_detail04.png', 'JE005_detail04.png', 'JE005_detail05.png', 'JE005_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE006', 'JE006_detail01.png','JE006_detail01.png', 'JE006_detail02.png', 'JE006_detail02.png', 'JE006_detail03.png', 'JE006_detail03.png', 'JE006_detail04.png', 'JE006_detail04.png', 'JE006_detail05.png', 'JE006_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE007', 'JE007_detail01.png','JE007_detail01.png', 'JE007_detail02.png', 'JE007_detail02.png', 'JE007_detail03.png', 'JE007_detail03.png', 'JE007_detail04.png', 'JE007_detail04.png', 'JE007_detail05.png', 'JE007_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE008', 'JE008_detail01.png','JE008_detail01.png', 'JE008_detail02.png', 'JE008_detail02.png', 'JE008_detail03.png', 'JE008_detail03.png', 'JE008_detail04.png', 'JE008_detail04.png', 'JE008_detail05.png', 'JE008_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE009', 'JE009_detail01.png','JE009_detail01.png', 'JE009_detail02.png', 'JE009_detail02.png', 'JE009_detail03.png', 'JE009_detail03.png', 'JE009_detail04.png', 'JE009_detail04.png', 'JE009_detail05.png', 'JE009_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JE010', 'JE010_detail01.png','JE010_detail01.png', 'JE010_detail02.png', 'JE010_detail02.png', 'JE010_detail03.png', 'JE010_detail03.png', 'JE010_detail04.png', 'JE010_detail04.png', 'JE010_detail05.png', 'JE010_detail05.png');
+
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JB006', 'JB006_detail01.png','JB006_detail01.png', 'JB006_detail02.png', 'JB006_detail02.png', 'JB006_detail03.png', 'JB006_detail03.png', 'JN011_detail04.png', 'JB006_detail04.png', 'JB006_detail05.png', 'JB006_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'JN011', 'JN011_detail01.png','JN011_detail01.png', 'JN011_detail02.png', 'JN011_detail02.png', 'JN011_detail03.png', 'JN011_detail03.png', 'JN011_detail04.png', 'JN011_detail04.png', 'JN011_detail05.png', 'JN011_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'KK016', 'KK016_detail01.png','KK016_detail01.png', 'KK016_detail02.png', 'KK016_detail02.png', 'KK016_detail03.png', 'KK016_detail03.png', 'KK016_detail04.png', 'KK016_detail04.png', 'KK016_detail05.png', 'KK016_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'KB001', 'KB001_detail01.png','KB001_detail01.png', 'KB001_detail02.png', 'KB001_detail02.png', 'KB001_detail03.png', 'KB001_detail03.png', 'KB001_detail04.png', 'KB001_detail04.png', 'KB001_detail05.png', 'KB001_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'US013', 'US013_detail01.png','US013_detail01.png', 'US013_detail02.png', 'US013_detail02.png', 'US013_detail03.png', 'US013_detail03.png', 'US013_detail04.png', 'US013_detail04.png', 'US013_detail05.png', 'US013_detail05.png');
+insert into tblDetailImg values(detailImgSeq.nextVal, 'SE011', 'SE011_detail01.png','SE011_detail01.png', 'SE011_detail02.png', 'SE011_detail02.png', 'SE011_detail03.png', 'SE011_detail03.png', 'SE011_detail04.png', 'SE011_detail04.png', 'SE011_detail05.png', 'SE011_detail05.png');
+
+select  from tblAccommodation;
+
+-- tblAmenity
+
+insert into tblAmenity values (amenitySeq.nextVal, 'BU001', 'y', 'n', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU002', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU003', 'n', 'n', 'n', 'y', 'y', 'n', 'n');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU004', 'y', 'y', 'y', 'y', 'n', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU005', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU006', 'n', 'n', 'n', 'n', 'n', 'n', 'n');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU007', 'y', 'n', 'y', 'y', 'n', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU008', 'y', 'y', 'y', 'y', 'y', 'n', 'n');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU009', 'n', 'y', 'n', 'n', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU010', 'y', 'y', 'y', 'y', 'y', 'n', 'n');
+
+insert into tblAmenity values (amenitySeq.nextVal, 'BU020', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU021', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU022', 'y', 'n', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU023', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU024', 'y', 'n', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU025', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU026', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU027', 'y', 'n', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU028', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU029', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU030', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU031', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU032', 'y', 'y', 'y', 'n', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU033', 'y', 'y', 'y', 'n', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU034', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU035', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU036', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU037', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU038', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU039', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU040', 'y', 'y', 'y', 'n', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU041', 'y', 'y', 'y', 'n', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU042', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU043', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU044', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU045', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU046', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU047', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU048', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU049', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'BU050', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+
+insert into tblAmenity values (amenitySeq.nextVal, 'JE001', 'n', 'n', 'n', 'n', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE002', 'y', 'n', 'n', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE003', 'y', 'n', 'n', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE004', 'y', 'n', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE005', 'y', 'n', 'n', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE006', 'y', 'n', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE007', 'y', 'n', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE008', 'y', 'n', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE009', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JE010', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+
+insert into tblAmenity values (amenitySeq.nextVal, 'JN011', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'JB006', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'KK016', 'y', 'y', 'y', 'y', 'y', 'y', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'KB001', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'US013', 'y', 'n', 'y', 'y', 'y', 'n', 'y');
+insert into tblAmenity values (amenitySeq.nextVal, 'SE011', 'y', 'y', 'y', 'y', 'y', 'n', 'y');
+
+-- tblItinerary
+
+insert into tblItinerary values (itinerarySeq.nextVal, 'hodu5637', '전라북도', '2014-06-03', '2014-06-07', '3', '40000', 'm'); -- 1
+
+insert into tblItinerary values (itinerarySeq.nextVal, 'hodu5637', '경상북도', '2015-08-01', '2015-08-02', '3', '40000', 'm'); -- 2
+insert into tblItinerary values (itinerarySeq.nextVal, 'hodu5637', '울산광역시', '2015-08-04', '2015-08-05', '3', '70000', 'm'); -- 3
+insert into tblItinerary values (itinerarySeq.nextVal, 'hodu5637', '서울특별시', '2015-08-26', '2015-08-27', '3', '20000', 'm'); -- 4
+
+insert into tblItinerary values (itinerarySeq.nextVal, 'hodu5637', '부산광역시', '2015-09-11', '2015-09-13', '3', '80000', 'm'); -- 5
+
+
+-- tblDetailItinerary
+-- 전라북도 전주시
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-03', 'AM0800', 218, '삼백집 가서 아침식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-03', 'PM0100', 218, '오목대 가서 셀카봉으로 사진찍을거야' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-03', 'PM0100', 218, '베테랑 가서 점식식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-03', 'PM0600', 218, '애루화 가서 저녁식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-03', 'PM0900', 218, '한옥마을 가서 참이슬' );
+
+
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-04', 'PM0300', 218, '시내 가서 구경' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-04', 'PM0600', 218, '시내 가서 참이슬' );
+
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-05', 'PM0300', 218, '삼백집 가서 아침식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-05', 'PM0700', 218, '스시다미 가서 점심식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-05', 'PM1000', 218, '시내 가서 참이슬' );
+
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-06', 'PM0100', 218, '한국집 가서 아침식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-06', 'PM0300', 218, '간식으로 문꼬치' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 1, '2014-06-06', 'PM0600', 218, '한옥마을 가서 참이슬' );
+
+
+-- 경상북도 경주시
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 2, '2015-08-01', 'AM0800', 167, '함양집 가서 아침식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 2, '2015-08-01', 'PM0100', 167, '보문단지 가서 스타벅스' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 2, '2015-08-01', 'PM0300', 167, '청성대  석빙고  대릉원 구경할거야' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 2, '2015-08-01', 'PM0700', 167, '안압지 가서 야경봐야지 혼자' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 2, '2015-08-01', 'PM1100', 167, '혼자 참이슬먹으꺼야' );
+
+-- 울산광역시 남구 
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 3, '2015-08-04', 'AM0800', 68, '숙박에서 조식' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 3, '2015-08-04', 'PM0100', 68, '착한밥상 가서 점심식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 3, '2015-08-04', 'PM0300', 68, '신화벽화마을 구경' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 3, '2015-08-04', 'PM0800', 68, '젊음의 거리에서 참이슬' );
+
+
+-- 서울특별시 강남구
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 4, '2015-08-26', 'AM0800', 2, '학원에서 빵' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 4, '2015-08-26', 'PM0100', 2, '소셜 가서 삼겹살' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 4, '2015-08-26', 'PM0600', 2, '노란통닭 가서 참이슬' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 4, '2015-08-26', 'PM0900', 2, '피쉬앤그릴 가서 참이슬' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 4, '2015-08-26', 'PM1100', 2, '숙박 가서 참이슬' );
+
+
+-- 부산광역시 해운대구
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-11', 'AM0800', 42, '자갈치시장 가서 생선정식' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-11', 'PM0300', 42, '센텀시티 가서 패딩 사입을거야' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-11', 'PM0600', 42, '광안리 가서 디스코팡팡' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-11', 'PM0900', 42, '해운대 가서 참이슬' );
+
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-12', 'PM0100', 42, '해운대 전복죽 아침식사' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-12', 'PM0300', 42, '해동용궁사 가서 바다구경' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-12', 'PM0400', 42, '남포동 가서 씨앗호떡' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-12', 'PM0600', 42, '해운대 가서 유람선' );
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 5, '2015-09-12', 'PM0900', 42, '태종대 가서 조개구이' );
+
+-- null 
+insert into tblItinerary values (itinerarySeq.nextVal, 'hushAdmin', '전라북도', '2014-06-03', '2014-06-07', '3', '40000', 'm'); -- 6
+insert into tblDetailItinerary values (detailItinerarySeq.nextVal, 6, '2015-09-12', 'PM0900', 42, '태종대 가서 조개구이' ); -- 37
+
+
+-- tblAccommodationQuestion
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'hodu5637', 'BU001', '결제 취소 후 환불절차관련 질문입니다.','결제 취소 후 환불절차는
+ 어떻게 되나요', default, default);
+ 
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'hodu5637', 'BU002', '카드결제시 수수료관련 질문입니다.','카드로 결제시 수수료가 따로 
+추가로 나가나요 혹시 특정카드만 그렇다면 알려주실수 있으신가요', default, default);
+
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'kkimyh', 'BU003', '무통장입금 결제관련 질문입니다.','제가 무통장 입금 부모님 통장으로
+해야되는 상황인데 이거 이름을 어떡해 해야 할지 잘 몰라서요. ', default, default);
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'limjjang', 'BU004', '결제 확인 관련 질문입니다.','결제가 완료시 결제가 되었다는 확인은 
+어디서 해야 하나요', default, default);
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'gh5959', 'BU005', '핸드폰 결제관련 질문입니다.','핸드폰으로 결제를 시도 했는데요
+자꾸 한도가 안된다고 하는데 한도는 넉넉히 있는데 왜자꾸 이렇게 뜨죠', default, default);
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'ckdtns11', 'BU006', '상품 찜에 관한 질문입니다.','상품 찜이 정확히 뭔가요 자세히
+설명좀 부탁드립니다.', default, default);
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'mj1004', 'BU007', '상품 찜에 관한 질문입니다.','저는 혼자가 아니라 친구랑 둘이서
+여행을 하려고 하는데요, 상품찜을 한번데 2개를 할 수 있나요', default, default);
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'celery', 'BU008', '상품 찜에 관한 질문입니다. ','제가 상품 찜을 했는데 다른곳이 마음에
+들어서 다른곳을 찜을 하려고 하는데 이미 찜이 다되어서 결제해달라는 연락을 받았는데요. 이거 어떡해 취소해야 하는 건가요', default, default);
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'ht1004', 'BU009', '상품 찜에 관한 질문입니다.','꼭 가고싶은 숙소가 있는데 찜이 꽉차서요
+혹시 찜을 늘려주실수는 없나요', default, default);
+
+insert into tblAccommodationQuestion values (accommodationQuestionSeq.nextVal, 'ht1004', 'BU010', '결제취소 관련 질문입니다.','제가 개인적인 사정으로 여행을 
+못가게 되었는데 날짜가 당장 내일인데 혹시 이거 취소 못하나요', default, default);
+
+-- tblAccommodationAnswer
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '온라인 상으로 취소가 불가능하며 유선상으로 
+예약담당자에게 취소 요청을 해 주셔야 합니다.', 1);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '카드결제시 수수료는 따로 나가지 않습니다. 혹 특정카드가 수수료를 지불된다면
+저희쪽에 유선상으로 연락을 주시면 수수료를 지불해드립니다.', 2);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '본인명의 계좌가 아닐시 이름을 바꿔서 입금 해주시거나 아니면 입금하시고나서
+저희에게 다시 문의 주시면 확인해 드리겠습니다. 온라인이나 유선 모두 가능합니다.', 3);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '온라인 상으로 홈페이지에서 확인이 가능하시구요. 혹시라도 어떤문제가 있으시다면
+유선상으로 연락주시면 친절히 알려드리겠습니다.', 4);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '죄송합니다만 확인결과 핸드폰 결제관련에는 아무런 문제가 없습니다.
+혹여나 통신사에 문제가 있을수도 있으니 통신사와 연락해보시기 바랍니다. 그래도 안되신다면 유선상으로 연락주시면 해결해드리겠습니다.', 5);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '상품 찜은 그 숙소에서 수용할수 인원의 수만큼 찜을 할수 있고요,
+찜이 다되야 결제가 가능합니다. 즉 찜이 다되야만 그 숙소의 머물 수 있습니다. 찜이 다 되지 못한 경우는 자동으로 취소됩니다. 더 자세한 사항은
+유선으로 연락주시면 친절히 대답해드리겠습니다.', 6);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '죄송합니다 한 상품에 관하여 한계정으로 한번만 찜을 할 수 있습니다. 두분이서 하실경우
+두개의 계정으로 하셔야 합니다.', 7);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '그런경우 결제를 하지 않으시면 자동으로 취소 됩니다. 또는 유선으로 
+연락주시면 저희쪽에서 처리해 드립니다.', 8);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '죄송합니다. 한 숙소에서 수용할 수 있는 인원이 정해져있기때문에 그 문제는 
+저희가 처리해드릴수가 없습니다. 정말 죄송합니다.', 9);
+
+insert into tblAccommodationAnswer values (accommodationAnswerSeq.nextVal, 'hushAdmin', '죄송합니다 일주일전에 무조건 취소를 해주셔야만 할 수 있습니다.
+일주일도 안남은 상태에서는 환불 물론 취소가 불가능 합니다. 죄송합니다.', 10);
+
+
+-- tblNotice
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', 'notice1.png', 'notice1.png', '결제 가능 브라우저 확대 적용 안내', '안녕하세요, Hushbnb 입니다.
+Hushbnb 닷컴 홈페이지에서
+신용카드 결제서비스 이용 가능한 브라우저가 확대되었습니다.
+ 
+홈페이지 이용이 더욱 편리하도록 끊임없이 최선을 다하겠습니다.
+Hushbnb를 사랑해주셔서 감사합니다.
+ 
+기존  Internet Explorer
+변경  Internet Explorer  Google Chrome  Opera  Safari', default, default);
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', 'notice2.png', 'notice2.png', 'Hushbnb 내맘대로여행팩 서비스 오픈', '안녕하세요, Hushbnb입니다.
+항공과 호텔을 각각 원하는 조건으로 미리 검색하고 비교할 수 있는
+ 
+내맘대로여행팩 서비스를 오픈하였습니다.
+ 
+휴양지를 대표하는 5개 지역의 다양한 호텔과 즐길거리를 확인하시고
+ 
+추운 겨울 따뜻한 지역으로 여행을 떠나보시는 것은 어떨까요 ^_^', default, default);
+      
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', 'notice3.png', 'notice3.png', '[Hushbnb 1위] 패키지 해외여행 서비스 만족도', '고객님의 보내주신 관심과 성원에 진심으로 감사드립니다. 
+한국소비자원과 한국관광공사에서 공동 주관하여 조사한 10개 여행사별 패키지 해외여행서비스에 대한 
+소비자 만족도 조사에서 Hushbnb가 여행업계 1위에 선정되었습니다.
+ 
+최근 2년간 해외여행 패키지 여행상품을 이용한 소비자 2천명을 대상으로 조사되었으며, 
+Hushbnb는 여행상품 정보제공,예약 및 결제과정,구성 및 운영,진행 및 안내원 부문에서 각 부문별 1위를 차지했습니다.
+고객님의 참여와 성원에 다시 한번 감사드리며, 앞으로도 고객 서비스 혁신 및 개선의 수혜자는 고객이 되어야 한다는 관점과 신념으로 지속적으로 노력하겠습니다. 감사합니다.', default, default);
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', 'notice4.png', 'notice4.png', 'Hushbnb 닷컴 성지순례 페이지 오픈 공지', '안녕하세요. Hushbnb입니다. 
+Hushbnb 닷컴  내  성지순례 페이지가 오픈하였습니다. 
+
+기독교,천주교,불교 등 종교별  테마 상품, 추천상품 영역을 구성하여 
+고객님께서 보다 편리하게 하나투어 성지순례 상품을 찾아보실 수 있도록 안내하고 있으며, 
+e-book, 동영상 등을 통해 미리 성지순례를 체험하실 수 있도록 서비스하고 있습니다. 
+
+전문인솔자가 출발지부터 전 일정 안심 동행하는 상품부터, 
+정통 순례 상품, 교인 맞춤여행, 허니문크루즈배낭 등
+다양한 성지순례 테마 상품을 이젠 Hushbnb에서 만나보세요.', default, default);
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', ' ', ' ', 'Hushbnb [개인정보처리방침] 개정 안내', '[ 개정 사유 ]
+정보통신망법률 제29조 (시행령 제16조) 에 의거한 개인정보 유효기간 단축조치의 사업자의무 준행
+ 
+[ 개정 항목 ]
+개인정보처리방침  제3항. 개인정보의 이용 및 보유기간
+ 
+[변경 전]
+가. 회사는 개인정보 유효기간제도를 준행하며, 해당 정보통신 서비스를 3년동안 이용하지 않은 이용자의 개인정보를 보호하기 위하여 파기 등의 필요한 조치를 취하여 개인정보의 오, 남용 및 유출을 방지하고 있습니다. 
+나. 회사는 3년의 유효기간 만료가 도래하기 30일 전까지, 회사의 보안규정 및 지침에 따라 이용자의 개인정보항목이 파기 되거나   보관이 필요 할 경우 관련 법령에 따라 안전하게 분리 저장, 관리되는 사실을 고지합니다
+ 
+[변경 후]
+가. 회사는 개인정보 유효기간제도를 준행하며, 해당 정보통신 서비스를 1년 동안 이용하지 않은 이용자의 개인정보를 보호하기  위하여 파기 등의 필요한 조치를 취하여 개인정보의 오, 남용 및 유출을 방지하고 있습니다. 
+나. 회사는 1년 의 유효기간 만료가 도래하기 30일 전까지, 회사의 보안규정 및 지침에 따라 이용자의 개인정보항목이 파기 되거나   보관이 필요 할 경우 관련 법령에 따라 안전하게 분리 저장, 관리되는 사실을 고지합니다', default, default);
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', 'notice5.png', 'notice5.png', 'Hushbnb [이용약관] 개정 안내', '이용약관 제 18 조 개인정보보호 
+ 
+[변경 전]
+② “회사”는 정보통신망법에서 규정하는 개인정보 유효기간제도를 준행하며 3년 이내에 회사의 웹사이트를 통한 정보통신 서비스를 이용하지 않은 고객의 개인정보는 절차에 의하여 파기하거나 별도로 분리하여 저장, 관리하여 개인정보 보호 정책을 추진하고 있습니다
+ 
+[변경 후]
+② “회사”는 정보통신망법에서 규정하는 개인정보 유효기간제도를 준행하며  1년 동안 당사의 정보통신 서비스를 이용하지 않은 고객의 개인정보는 절차에 의하여 파기하거나 별도로 분리하여 저장, 관리하여 개인정보 보호 정책을 추진하고 있습니다', default, default);
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', ' ', ' ', '예약결제페이지 리뉴얼 오픈 공지', '안녕하세요. Hushbnb입니다.
+언제나 Hushbnb를 사랑해주시는 고객님께 진심으로 감사드립니다.
+Hushbnb닷컴 예약결제페이지가 리뉴얼 되어 안내드리니,
+이제 보다 편리해진 화면에서 쉽고 간편하게 이용해주시기 바랍니다.
+항상 고객을 최우선으로 생각하고 고객의 눈높이에서 최상의 서비스를 제공하기 위하여 생각하는
+Hushbnb가 되도록 노력하겠습니다.
+감사합니다. ^^', default, default);
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', ' ',' ', '특별가 제안', '호스트는 특별가 제안 기능을 이용해서 맞춤 가격을 제공할 수 있습니다. 호스트가 정한 맞춤 가격은 숙박 대금, 청소비, 게스트 추가 수수료만을 포함한 가격임을 명심하십시오. 허쉬비앤비 서비스 수수료, 환율 수수료, 또 다른 관련 세금은 호스트가 제안한 가격과는 따로 명시되어 추가될 수 있습니다.',default, default);
+
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', ' ',' ', '인증 방법', '컴퓨터에서 본인 인증을 완료하려면, 먼저 최신 인터넷 브라우저가 설치되었는지 확인하세요. 그런 다음 본인 인증하기 버튼을 클릭하세요. 단계별로 설명이 나옵니다. 호스트가 본인 인증을 요구하는 경우 예약 신청을 보낸 후 바로 절차를 완료하도록 페이지가 이동됩니다. 12시간 안에 완료하셔야 합니다. 나중에 인증을 하고 싶으신 경우 준비가 되셨을 때 절차를 다시 밟으시면 됩니다.', default, default);
+
+
+insert into tblNotice values(noticeSeq.nextVal, 'hushAdmin', ' ',' ', '후기 작성하기', '최근 숙박한 숙소에 대해 후기를 남기시려면 후기로 가세요. 후기는 500자 이내로 작성하고 허쉬비앤비 후기 작성 가이드라인을 따라주셔야 합니다. 상대방의 성이나 주소와 같은 개인 정보를 후기에 남기지 않도록 주의해 주세요. ',default, default);
+
+
+-- tblHomepageQuestion
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'myy11','로그인 관련 질문입니다.', '로그인이 안돼요.', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'sotae', '회원가입 관련 질문입니다.', '실명확인이 안됩니다.', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'binuuu','게시판 확인이 안되요', '게시판 페이지를 누르면 안넘어가고 계속 새로고침뜨네요', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'mingug', '결제페이지 오류요','결제페이지에서 정보 다 입력하고 결제 하기 누르니깐 자꾸 다시 입력하라네요~', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'kkimyh', '공지사항 내용이 안보입니다.','공지사항 확인하려고 하는데, 내용이 아무것도 안보이네여', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'limjjang', '뜨는 속도가 너무 느린데요','여행좀하려고 검색하려는데 왜이렇게 안뜨고 느리나요~홈페이지 전체가 느린것 같네요~ 확인좀요', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'gh5959', '검색시 날짜가 이상하게 나와요','8월로 검색했는데 자꾸 7월달로 뜨는데 이거 왜이러죠', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'ckdtns11', '비밀번호 찾기 관련 문제','비밀번호 찾기를 해서 다시 입력했는데도 비밀번호가 틀렸다고 나오네요 그래서 다른 계정으로 글 올립니다. 해결해주세요', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'mudohehe', '사진을 올렸는데 엑박으로 뜨는데 어쩌죠', '회원가입때 사진을 올렸는데 자꾸 엑박으로 떠요......무슨문제인가요', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'nojy90', '메시지가 안와요', '상품 찜이 완료되면 메시지가 와서 결제가 되잖아요 근데 메시지가 안오는데 제대로 된게 맞는지 모르겠네요.', default, default);
+
+insert into tblHomepageQuestion values(homepageQuestionSeq.nextVal, 'king32', '탈퇴하고싶은데요.', '계정 삭제 하고 싶은데 어떡해 해야 하나요', default, default);
+
+-- tblHomepageAnswer
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '먼저 허쉬비앤비의 회원아이디인
+ 이메일주소를 잘못 입력하셨을 때, 이 경우는 에러 페이지에 해당아이디가 존재하지 않습니다.
+ 다시 한번 확인해 주세요 라는 메세지로 알려드립니다. 이럴 경우는 에러 페이지 하단의 이메일찾기를 하셔서
+ 아이디를 다시 한번 확인해 주세요. 그리고 비밀번호를 잘못입력하셨을 경우에는 아이디와 암호가 일치하지 않습니다. 
+다시 한번 확인해 주세요 라는 메세지로 알려드립니다. 이 경우는 동일 페이지나 로그인 페이지에서 이메일찾기 옆의
+ 비밀번호찾기를 이용하실 수 있습니다 .',1);
+ 
+ insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '고객님께서 회원가입 혹은 예약을 하려는데 실명확인이 안되는 경우가 있습니다.
+고객님의 개인정보가 서울신용평가정보쪽에 등록되어 있지 않으면, 실명확인이 안됩니다. 
+은행통장이나 카드발급등 금융거래가 있으면 서울신용평가정보DB에 고객님의 개인정보가 등록되는데, 
+금융거래가 없는 고객(아동이나 미성년자)분들이 이런 경우가 종종 발생합니다.
+
+서울신용평가정보에 개인정보를 등록하는 방법
+주민등록번호가 나와있는 서류(예  주민등록증, 주민등록등초본, 여권등)를 
+Fax (02) 3449-1678 또는 e-mail credit@siren24.com 로 보내시면 됩니다.
+처리시간은 30분이며, 그 이상 소요시에는 전화로 확인하시면 됩니다.
+
+서울신용평가정보 
+홈페이지  httpswww.sci.co.krkrcustomerfaq.htm
+근무시간  평일 오전 9시 ~ 오후 5시 30분
+연락처  전화 1577-1006, 팩스 02-3449-1678, 이메일 credit@siren24.com',2);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '일단 사과의 말씀을 드리겠습니다.
+서버상에 문제가 있어서 페이지에 오류가 있는 모양입니다. 지금 바로 확인 후 문제가 없도록 조취하겠습니다. 빠른시간내에 해결해 드리겠습니다
+공지사항을 확인해 주세요.',3);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '일단 사과의 말씀을 드리겠습니다.
+서버상에 문제가 있어서 페이지에 오류가 있는 모양입니다. 혹여나 동의하기 버튼이나 제대로 입력하셨는지 한번 확인해주시기 바랍니다.',4);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '일단 사과의 말씀을 드리겠습니다.
+서버를 확인한 결과 아무 문제도 없는걸로 확인됬습니다. 인터넷 상태나 사용하시는 PC 상태를 한번 확인해 주시면 감사하겠습니다.',5);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '다중 접속자가 너무 많습니다. 죄송합니다
+지금 다중접속을 해결하기 위해 확인하고 있으니, 잠시 양해 부탁드리겠습니다. ',6);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '지금 확인중에 있습니다. 공지사항을 확인해 주세요
+혹여나 급하시면 유선상으로 전화 주시기 바랍니다.',7);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '정말 죄송합니다. 아직 홈페이지가 만들어진지 
+얼마 안되서 많이 미흡한점 다시 사과드립니다. 유선상으로 전화주시면 본인 확인후 저희가 직접 해결해 드리겠습니다.',8);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '혹시 사진 파일 이름을 확인해 주실수 있으신가요
+저희 사진파일 이름은 10자 이내입니다. 한글영어 상관없지만 잘 안되신다면 짧게 영어로 바꿔주시기 바랍니다. ',8);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '상품이 다시 찜이 빠졌을 경우 충돌로 
+메시지가 안갈수도 있습니다. 죄송합니다. 혹시 찜이 다된 상태에서 아직도 메시지가 도착하지 않았다면 유선으로 전화주시면 빠르게 해결해드리겠습니다
+죄송합니다.',9);
+
+insert into tblHomepageAnswer values(homepageAnswerSeq.nextVal, 'hushAdmin', '지금 탈퇴 하는 서비스를 아직 준비하지 못한점
+죄송하게 생각합니다. 유선상으로 연락주시면 바로 해결 해드리겠습니다. 혹시 불편한 사항이 있으셨다면 같이 얘기 해주시면 홈페이지 운영에 많은 도움이 되니 얘기해주시기 바랍니다.',10);
+
+
+-- tblReview
+
+insert into tblReview values (reviewSeq.nextVal, 'hodu5637', 'BU001', '좋아요~', '서울의 중심지인 강남의 주택가여서 조용하고 편안한 휴식이 되었습니다.
+아늑하고 구석구석이 호스트님의 깔끔한 정성이 담겨있어서 행복한 여행을 누리는데 많은 도움이 되었습니다.
+다음번 여행에서도 다시 찾고픈 게스트하우스입니다.', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'bm1004', 'BU001', '굿이야~굿~', '정말 좋아요~!! 무엇보다 시설이 너무 깨끗해서 좋았습니다.
+넓은 여유 공간이 있어서 편하게 지낼수 있었구요. 화장실도 청소를 잘 해주셔서 그런지 깔끔하고 깨끗해서 좋았습니다. 꼭 다시 한번 놀러가고싶네요', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'bjhhogu', 'BU001', '넓어용~!', '공간이 넓고 트여있어서 힐링하러 갔는데 속이 다 시원하더라구요. 공기도 맑고 상쾌했습니다.
+정말 강추에요~!!', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'jyun9095', 'BU001', '편합니다~!', '편하게 있다가 온거 같네요. 방안에 비치된 여러가지 기본 옵션 물품들이 많고 해서 짐도 덜
+챙길 수 있어서 가벼운 마음으로 갔다가 가벼운 마음으로 돌아 올 수 있었습니다. 각박한 세상에 찌들어 계시는 분들 강추 입니다~. 주변 환경도 볼거리도 많아요^^', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'nojy90', 'BU001', '즐거운 추억이였어요~!', '시간이 안맞아 친구들과 같이 못가서 혼자갔는데 거기 오신분들과 많이 친해져서 재미있고
+즐거운 추억이 생겨서 너무 좋았습니다 굿이야~!', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'mudohehe', 'BU001', '많이 보고 왔어요', '주변에 볼거리가 너무 많아요~!!! 그래서 사진도 많이 찍고 많은 추억남기고 돌아왔네요.
+여긴 정말 굿입니다~! 다 못즐기고 온게 너무 아쉽네요 꼭 내년에도 다시 찾아가서 못즐긴 볼거리들을 다 즐길게요~!!', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'celery', 'BU001', '맛있게 먹고 왔네요ㅎ', '혼자 먹방이나 찍으러 갈까 해서 갔는데 주변에 다행히 맛집도 많고 먹을거리들이 많아서
+정말 좋았습니다. 굿이야~!!! 또 같이 오신분들과 친해져서 먹거리가 더 맛있게 느껴졌네요 정말 강추에요~!^^', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'warehouse', 'BU001', '힐링힐링~', '전 혼자 조용히 힐링 하러 갔는데 ㅠㅠ 같이 오신분들이 너무 시끄러워서 아쉬웠어요.
+하지만 숙소 위치와 주변 볼거리들이 좋아서 별 4개 정도 줄 수 있을 것 같네요.^^', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'octopus', 'BU001', '힘들어여~ ㅠㅠ', '힘들게 찾아간 숙소...하지만 조금은 청소가 덜 되어 있는거 같아서 아쉬웠어요. 기본옵션이나
+이런 것들은 정말 좋았는데 다음번에 청소 말끔히 부탁드려요~~!!!', default, default);
+
+insert into tblReview values (reviewSeq.nextVal, 'myy11', 'BU001', '깨끗하네여~', '초강추, 숙소상태가 너무 좋았어요. 청소는 물론 기본옵션까지, 더군다나 주변에 맛집이며
+볼거리들이 많아서 정말 강추 드려요. 다른분들도 꼭 경험하셨으면 좋겠네요.', default, default);
+
+-- tblZzim
+
+-- 성사찜
+insert into tblZzim values (zzimSeq.nextVal, 'bm1004', 'BU001', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'bm1004', 'BU001', '2015-09-01', '2015-09-10');
+insert into tblZzim values (zzimSeq.nextVal, 'bjhhogu', 'BU001', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'bjhhogu', 'BU001', '2015-09-01', '2015-09-10');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'BU001', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'BU001', '2015-09-01', '2015-09-10');
+
+-- 대기찜
+
+-- 실패찜
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'JN011', '2015-08-05', '2015-08-14');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'JN011', '2015-08-05', '2015-08-15');
+
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'JB006', '2014-05-27', '2014-06-03');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'JB006', '2014-05-27', '2014-06-04');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'JB006', '2014-05-27', '2014-06-05');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'JB006', '2014-05-27', '2014-06-06');
+
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'KK016', '2013-06-23', '2013-07-02');
+
+-- 완료찜
+insert into tblZzim values (zzimSeq.nextVal, 'jingjing', 'KB001', '2015-07-22', '2015-08-01');
+insert into tblZzim values (zzimSeq.nextVal, 'ht1004', 'KB001', '2015-07-22', '2015-08-01');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'KB001', '2015-07-22', '2015-08-01');
+
+insert into tblZzim values (zzimSeq.nextVal, 'celery', 'US013', '2015-07-25', '2015-08-04');
+insert into tblZzim values (zzimSeq.nextVal, 'jingjing', 'US013', '2015-07-25', '2015-08-04');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'US013', '2015-07-25', '2015-08-04');
+
+insert into tblZzim values (zzimSeq.nextVal, 'warehouse', 'SE011', '2015-08-18', '2015-08-26');
+insert into tblZzim values (zzimSeq.nextVal, 'bm1004', 'SE011', '2015-08-18', '2015-08-26');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'SE011', '2015-08-18', '2015-08-26');
+
+
+-- 관리자를 위한 성사찜
+
+
+insert into tblZzim values (zzimSeq.nextVal, 'mudohehe', 'JE001', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'sunsun', 'JE001', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'gdragon', 'JE001', '2015-09-01', '2015-09-09');
+
+insert into tblZzim values (zzimSeq.nextVal, 'jyun9095', 'US013', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'nojy90', 'US013', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'hw5959', 'US013', '2015-09-01', '2015-09-09');
+
+insert into tblZzim values (zzimSeq.nextVal, 'jingjing', 'KB001', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'king32', 'KB001', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'ht1004', 'KB001', '2015-09-01', '2015-09-09');
+
+insert into tblZzim values (zzimSeq.nextVal, 'celery', 'JN011', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'warehouse', 'JN011', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'mj1004', 'JN011', '2015-09-01', '2015-09-09');
+
+insert into tblZzim values (zzimSeq.nextVal, 'octopus', 'JB006', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'hjhj59595', 'JB006', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'myy11', 'JB006', '2015-09-01', '2015-09-09');
+
+insert into tblZzim values (zzimSeq.nextVal, 'sotae', 'BU020', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'binuuu', 'BU020', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'mingug', 'BU020', '2015-09-01', '2015-09-09');
+
+insert into tblZzim values (zzimSeq.nextVal, 'kkimyh', 'BU044', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'gh5959', 'BU044', '2015-09-01', '2015-09-09');
+insert into tblZzim values (zzimSeq.nextVal, 'limjjang', 'BU044', '2015-09-01', '2015-09-09');
+
+-- tblAttraction
+insert into tblAttraction values (attractionSeq.nextVal,'42','BU_42_detail1.jpg','해운대', '부산광역시 해운대구 해운대해변로 264', '다양한 연중 축제로 볼거리와 즐길거리가 많은 해수욕장입니다.');
+insert into tblAttraction values (attractionSeq.nextVal,'42','BU_42_detail2.jpg','아쿠아리움', '부산광역시 해운대구 중1동 1411-4', '해양도시인 부산에 위치한 부산 아쿠아리움, 흥미진진한 바다 속 생물을 만나고 직접 먹이도 주는 짜릿함!.');
+insert into tblAttraction values (attractionSeq.nextVal,'42','BU_42_detail3.jpg','송정해수욕장', '부산광역시 해운대구 송정동 712-2', '달맞이 길과 벚꽃단지의 아름다움을 간직한 해수욕장입니다.');
+
+insert into tblAttraction values (attractionSeq.nextVal,'261','JE_261_detail1.jpg','김녕해변', '제주도 제주시 구좌읍 김녕리', '백사장이 깔린 부드러운 모래와 푸른빛의 맑은 바닷물로 유명한 김녕해변을 느껴보세요.');
+insert into tblAttraction values (attractionSeq.nextVal,'261','JE_261_detail2.jpg','우도', '제주도 제주시 우도면', ' 제주도의 부속도서 중에서 가장 면적이 넓고, 아름다운 곳으로 뽑히는 우도. ');
+insert into tblAttraction values (attractionSeq.nextVal,'261','JE_261_detail3.jpg','용두암', '제주특별자치도 제주시 용담2동', '용이 승천하려다 뜻을 이루지 못했다는 전설을 담고 있습니다. 제주 관광객들이 즐겨 찾는 명승지!');
+
+
+-- tblMessage
+insert into tblMessage values (messageSeq.nextVal, 'jingjing', '회원님이 예약하신 기대 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 기대 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-07-25');
+
+insert into tblMessage values (messageSeq.nextVal, 'ht1004', '회원님이 예약하신 기대 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 기대 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-07-25');
+
+insert into tblMessage values (messageSeq.nextVal, 'hodu5637', '회원님이 예약하신 기대 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 기대 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^'  , '15-07-25');
+
+insert into tblMessage values (messageSeq.nextVal, 'celery', '회원님이 예약하신 마일리지 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 마일리지 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-07-28');
+
+insert into tblMessage values (messageSeq.nextVal, 'jingjing', '회원님이 예약하신 마일리지 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 마일리지 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-07-28');
+
+insert into tblMessage values (messageSeq.nextVal, 'hodu5637', '회원님이 예약하신 마일리지 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 마일리지 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-07-28');
+
+insert into tblMessage values (messageSeq.nextVal, 'warehouse', '회원님이 예약하신 스폰서 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 스폰서 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-08-19');
+
+insert into tblMessage values (messageSeq.nextVal, 'bm1004', '회원님이 예약하신 스폰서 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 스폰서 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-08-19');
+
+insert into tblMessage values (messageSeq.nextVal, 'hodu5637', '회원님이 예약하신 스폰서 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 스폰서 펜션이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , '15-08-19');
+
+-- tblPayment
+
+insert into tblPayment values (paymentSeq.nextVal, 'KB001', 37, 'jingjing', 14, 'y');
+insert into tblPayment values (paymentSeq.nextVal, 'KB001', 37, 'ht1004', 15, 'y');
+insert into tblPayment values (paymentSeq.nextVal, 'KB001', 18, 'hodu5637', 16, 'y');
+
+insert into tblPayment values (paymentSeq.nextVal, 'US013', 37, 'celery', 17, 'y');
+insert into tblPayment values (paymentSeq.nextVal, 'US013', 37, 'jingjing', 18, 'y');
+insert into tblPayment values (paymentSeq.nextVal, 'US013', 22, 'hodu5637', 19, 'y');
+
+insert into tblPayment values (paymentSeq.nextVal, 'SE011', 37, 'warehouse', 20, 'y');
+insert into tblPayment values (paymentSeq.nextVal, 'SE011', 37, 'bm1004', 21, 'y');
+insert into tblPayment values (paymentSeq.nextVal, 'SE011', 27, 'hodu5637', 22, 'y');
+
+-- 테스트하는 insert문
+
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'BU001', '2015-08-28', '2015-09-05');
+insert into tblZzim values (zzimSeq.nextVal, 'gh5959', 'BU001', '2015-08-28', '2015-09-05');
+insert into tblZzim values (zzimSeq.nextVal, 'limjjang', 'BU001', '2015-08-28', '2015-09-05');
+
+-- select문할꺼야
+
+select  from tblZzim where id= 'hodu5637';
+
+commit;
+
+update tblZzim set accommodationcodeNum = 'BU005' where seq = 5;
+
+select  from tblAccommodation;
+
+select max(seq) from tblItinerary;
+
+select d.seq as seq, d.ITINERARYSEQ, d.DETAILDATE, d.TIME, d.REGIONSEQ, d.PLACE from tblItinerary i inner join tblDetailItinerary d on i.seq = d.itinerarySeq where i.id = 'hodu5637' and (select max(seq) from tblItinerary) = d.itinerarySeq order by i.seq desc;
+
+select i.seq as iseq from tblItinerary i inner join tblDetailItinerary d on i.seq = d.itinerarySeq where (select max(seq) from tblItinerary) = d.itinerarySeq order by i.seq desc;
+
+
+select b. from (select rownum as rnum, a. from (select seq, subject, name, regDate, readcount, rownum from tblBoard order by regDate desc) a) b where rnum = 1 and rnum = 5;
+
+
+select  from tblItinerary where id = 'hodu5637' and seq = (select max(seq) from tblItinerary);
+
+select  from tblItinerary order by seq desc;
+select  from TBLDETAILITINERARY order by seq desc;
+select  from tblRegion where seq = 42;
+
+
+select  from tblItinerary where id = 'hodu5637' and seq = (select max(seq) from tblItinerary);
+
+select  from tblitinerary;
+select  from tblItinerary order by seq;
+
+select  from tblDetailItinerary order by seq;
+
+select  from tblNotice where seq='5';
+
+
+select count() from tblMember where id= 'hodu5637' and pw='daechu77';
+
+select  from tblZzim where dday = '2015-08-26';
+
+select  from tblAccommodation where codeNum = 'JE009';
+
+select  from tblZzim where accommodationcodeNum = 'BU001';
+
+delete from tblZzim where accommodationcodeNum = 'BU001';
+commit;
+
+select  from TBLITINERARY where id='hodu5637' order by startDate asc;
+
+-- 최종 select
+-- 해운대구에 9월 3일에 찜한 cnt 
+
+select  from tblAccommodation a join
+  (select codenum, count() as cnt from tblAccommodation a 
+    join tblRegion r on r.SEQ= a.REGIONSEQ  
+      left join tblZzim z on a.codeNum=z.ACCOMMODATIONCODENUM 
+        where a.REGIONSEQ=42 and dday = '2015-09-03'
+            group by codenum
+  union     
+  
+  select codenum, round(count()  100000, 0) as cnt from tblAccommodation a 
+    join tblRegion r on r.SEQ= a.REGIONSEQ  
+      left join tblZzim z on a.codeNum=z.ACCOMMODATIONCODENUM 
+        where a.REGIONSEQ=42 and (dday  '2015-09-03' or dday is null)
+            group by codenum) b
+                on a.codenum = b.codenum;
+                
+
+
+insert into tblZzim values (zzimSeq.nextVal, 'bm1004', 'BU001', '2015-08-28', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'bjhhogu', 'BU001', '2015-08-28', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'BU001', '2015-08-28', '2015-09-08');
+
+
+commit;
+
+select  from tblZzim;
+
+select dDay from tblZzim where id='hodu5637';
+
+select accommodationcodeNum from tblZzim where id = 'hodu5637';
+
+select dDay from tblZzim;
+
+select accommodationCodeNum from tblZzim where dDay = '2015-09-05';
+
+select accommodationCodeNum from tblZzim where id = 'hodu5637' and dDay = '2015-09-05';
+
+select buseo, count() from insa
+          group by buseo
+                having count() = 10;
+
+-- 대기찜
+
+-- 우선 이건 실패 or 완료일거야
+select  from tblZzim where id = 'hodu5637' and dDay = '2015-09-05' order by dDay;
+
+
+select count() as cnt from tblZzim where accommodationCodeNum = 'KK016' and dDay = '2013-07-02';
+
+
+-- 날짜랑 숙박이 동일한 애의 카운트를 세야하는거자나
+select dDay from tblZzim group by dDay;
+
+
+-- 성사찜
+select accommodationCodeNum, count() as cnt from tblZzim  where accommodationCodeNum = (select accommodationCodeNum from tblZzim where id = 'hodu5637' and dDay = '2015-09-05') and dDay = '2015-09-05' group by accommodationcodeNum;
+
+select count(accommodationCodeNum) from (select  from tblZzim where dDay = '2015-09-05');
+select  from tblZzim where id='hodu5637' and dDay = '2015-09-05' and accommodationCodeNum = 'BU001';
+
+commit;
+
+select  from tblZzim z inner join tblAccommodation a on z.accommodationCodeNum = a.codeNum where z.accommodationCodeNum = 'BU001';
+
+select  from TBLAccommodation;
+
+select  from tblZzim where id = 'hodu5637' and dDay  '2015-09-05';
+
+select count() from tblZzim where accommodationCodeNum ='BU005' and dDay = '2015-09-09';
+select  from tblAccmmodation;
+select count() as cnt from tblZzim  where accommodationCodeNum = (select accommodationCodeNum from tblZzim where id = 'hodu5637' and dDay = '2015-09-05') and dDay = '2015-09-05' group by accommodationcodeNum;
+
+select  from tblPayment;
+
+select a.codeNum, a.mainImg, a.name, a.address, a.price, z.dDay from tblPayment p inner join tblAccommodation a on p.ACCOMMODATIONCODENUM = a.CODENUM inner join tblZzim z on p.ZZIMSEQ = z.seq where z.id = 'hodu5637';
+
+select a.mainImg, a.name, a.address, a.price, p.dDay from tblPayment p inner join tblAccommodation a on p.ACCOMMODATIONCODENUM = a.CODENUM;
+
+select  from tblAccommodation a inner join tblZzim z on a.codeNum = z.accommodationCodeNum where z.id='hodu5637' and a.codeNum='BU001' and dDay = '2015-09-06'; 
+
+select  from (select  from tblAccommodation a join tblRegion r on a.regionSeq = r.seq) ar 
+         join tblCity c on c.seq = ar.cityseq where codeNum='KB001';
+
+select  from tblAccommodation where name ='기대 펜션';
+
+
+-- 관리자 찜 관리
+
+insert into tblZzim values (zzimSeq.nextVal, 'mudohehe', 'JE001', '2015-09-01', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'sunsun', 'JE001', '2015-09-01', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'gdragon', 'JE001', '2015-09-01', '2015-09-07');
+
+insert into tblZzim values (zzimSeq.nextVal, 'jyun9095', 'US013', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'nojy90', 'US013', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'hw5959', 'US013', '2015-08-26', '2015-09-07');
+
+insert into tblZzim values (zzimSeq.nextVal, 'jingjing', 'KB001', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'king32', 'KB001', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'ht1004', 'KB001', '2015-08-26', '2015-09-07');
+
+insert into tblZzim values (zzimSeq.nextVal, 'celery', 'JN011', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'warehouse', 'JN011', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'mj1004', 'JN011', '2015-08-26', '2015-09-07');
+
+insert into tblZzim values (zzimSeq.nextVal, 'octopus', 'JB006', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'hjhj59595', 'JB006', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'myy11', 'JB006', '2015-08-26', '2015-09-07');
+
+insert into tblZzim values (zzimSeq.nextVal, 'sotae', 'BU020', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'binuuu', 'BU020', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'mingug', 'BU020', '2015-08-26', '2015-09-07');
+
+insert into tblZzim values (zzimSeq.nextVal, 'kkimyh', 'BU044', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'gh5959', 'BU044', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'limjjang', 'BU044', '2015-08-26', '2015-09-07');
+
+insert into tblZzim values (zzimSeq.nextVal, 'gh5959', 'BU042', '2015-08-26', '2015-09-07');
+insert into tblZzim values (zzimSeq.nextVal, 'limjjang', 'BU042', '2015-08-26', '2015-09-07');
+
+select accommodationCodeNum, count() as cnt from tblZzim  where accommodationCodeNum = (select accommodationCodeNum from tblZzim where dDay = '2015-09-06') and dDay = '2015-09-06' group by accommodationcodeNum;
+
+-- 관리자 입장에서 성사찜은 내가 접속한 날짜에서 +7한 날짜가 디데이이면서
+-- 같은 숙박의 카운트가 3인 애들이지
+
+select accommodationCodeNum, count(accommodationCodeNum) as cnt from tblZzim where dDay = '2015-09-06' group by accommodationCodeNum;
+
+select z.dDay, a.name, a.address, a.price, z.accommodationCodeNum, z.id from tblZzim z inner join tblAccommodation a on z.ACCOMMODATIONCODENUM = a.codeNum where z.dDay='2015-09-06' and accommodationCodeNum='JE001';
+
+commit;
+
+select  from tblMessage;
+
+select  from tblZzim;
+
+insert into tblMessage values (messageSeq.nextVal, #{id}, '회원님이 예약하신 기대 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 '  #{name}  '이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , sysdate);
+
+select  from tblMessage;
+
+select  from tblMessage where id='myy11';
+
+select  from tblDetailImg;
+
+select  from tblMember where id ='jyun9095';
+
+select count() as cnt from tblMessage where id='myy11' and regDate = '2015-08-30';
+
+select accommodationCodeNum, count(accommodationCodeNum) as cnt from tblZzim where dDay = '2015-09-07' group by accommodationCodeNum;
+
+select 
+ from tblZzim z inner join tblAccommodation a on z.accommodationCodeNum = a.codeNum
+ where z.accommodationCodeNum = 'BU001'
+ and z.dDay = '2015-08-24'
+ and id = 'hodu5637';
+ 
+ select  from tblZzim where id='hodu5637' and dday='2015-08-24';
+ 
+ delete from tblZzim where seq = 78;
+ 
+ select  from tblZzim;
+ 
+ commit;
+ 
+ select  from tblZzim where id='hodu5637';
+ 
+ select  from tblItinerary;
+ delete from tblItinerary where seq = 22;
+ delete from tblItinerary;
+ select  from tblDetailItinerary;
+ select max(seq) from tblItinerary;
+ select  from tblMessage where id = 'hodu5637' order by seq desc;
+ select  from tblZzim z inner join tblAccommodation a on z.accommodationCodeNum = a.codeNum where z.accommodationCodeNum = 'BU001' and z.dDay = '2015-09-07' and id = 'hodu5637';
+ 
+ select  from tblItinerary where id='hodu5637';
+ delete from tblItinerary where seq = 24;
+ select  from tblItinerary;
+ select  from tblDetailItinerary;
+ 
+ select  from tblZzim where dday = '2014-06-06';
+ 
+ commit;
+ 
+ -- JN011  JN011  JB0063  KK016  KB001  US013  SE011  BU001  BU048
+ 
+ select  from tblZzim where id = 'hodu5637' and dDay = '2015-09-07' order by seq desc;
+ select count() as cnt from tblZzim where accommodationCodeNum = #{accommodationCodeNum} and dDay = '2015-09-07';
+ 
+ select  from tblMessage where id = 'hodu5637' order by seq order by seq desc;
+select  from tblZzim where id = 'hodu5637' and dDay ='2015-09-07' order by dday desc;
+
+
+select  from tblZzim where id = 'hodu5637' order by dday;
+
+select  from tblItinerary;
+select  from tblDetailItinerary where ITINERARYSEQ = 40 order by seq;
+delete from tblItinerary where seq = 46;
+
+delete from TBLDETAILITINERARY where itinerarySeq = 46;
+select count() from TBLDETAILITINERARY where itinerarySeq = 1 and detailDate='2014-06-03';
+commit;
+
+select d.seq as detailItinerarySeq from tblZzim z inner join tblItinerary i on z.id = i.id inner join tblDetailItinerary d on i.seq = d.itinerarySeq where z.id='hodu5637' and z.seq = '79' and z.dDay= d.detailDate;
+
+select  from tblZzim where seq = 79;
+
+select  from TBLITINERARY;
+
+select  from TBLDETAILITINERARY where ITINERARYSEQ = 6;
+
+select  from tblZzim z inner join tblMember m on z.id = m.id;
+
+select  from tblZzim z inner join tblItinerary i on z.id = i.id where z.id='hodu5637' and z.seq = '79' and i.startDate = z.dDay and z.dDay  i.ENDDATE;
+
+select d.seq as detailItinerarySeq from tblZzim z inner join tblItinerary i on z.id = i.id inner join tblDetailItinerary d on i.seq = d.itinerarySeq where z.id='hodu5637' and z.seq = '79' and z.dDay= d.detailDate;
+
+
+select  from tblItinerary;
+
+
+
+
+
+select  from tblPayment;
+
+select  from tblItinerary;
+delete from tblItinerary where seq = 47;
+delete from TBLDETAILITINERARY where itinerarySEq = 47;
+commit;
+select  from tblzzim where id='hodu5637' and dday='2015-08-01';
+
+select d.seq as seq, d.ITINERARYSEQ, d.DETAILDATE, d.TIME, d.REGIONSEQ, d.PLACE from tblItinerary i inner join tblDetailItinerary d on i.seq = d.itinerarySeq where i.id = 'hodu5637' and 40 = d.itinerarySeq order by seq asc;
+
+insert into tblPayment values (paymentSeq.nextVal, 'BU001', '37', 'hodu5637', '79', 'n');
+
+select  from tblPayment; -- id, accommodationSeq, zzimseq
+commit;
+
+select count() as cnt from tblPayment where id='hodu5637' and accommodationCodeNum='BU001';
+
+delete from tblPayment where seq = 24;
+
+select  from tblPayment;
+
+delete from tblpayment where seq = 25;
+
+commit;
+
+select  from tblItinerary;
+select  from tblAccommodation;
+select  from tblDetailItinerary;
+
+select accommodationCodeNum, count() as cnt 
+			from tblZzim  
+				where accommodationCodeNum = (select accommodationCodeNum 
+					from tblZzim where id = 'hodu5637' and dDay = '2015-09-08') 
+						and dDay = '2015-09-08' group by accommodationcodeNum;
+            
+select  from tblZzim where dday = '2015-09-08';
+
+delete from tblZzim where seq = 129;
+
+select  from tblPayment where id='hodu5637';
+select  from TBLACCOMMODATION;
+select count() as cnt from tblPayment where id='hodu5637' and zzimSeq = 143;
+commit;
+
+drop table from TBLDETAILIMG;
+
+select  from TBLAccommodation where regionSeq = 195;
+
+select  from tblNotice where seq = 21;
+delete from tblNotice where seq = 21;
+
+commit;
+
+commit;
+update tbldetailImg set detailImg1 = 'BU001_detail01.png', fileName1 = 'BU001_detail01.png' where codeNum='SE011';
+
+
+
+
+
+
+
+
+
+select  from tblZzim where id= 'hodu5637';
+
+commit;
+
+update tblZzim set accommodationcodeNum = 'BU005' where seq = 5;
+
+select  from tblAccommodation;
+
+select max(seq) from tblItinerary;
+
+select d.seq as seq, d.ITINERARYSEQ, d.DETAILDATE, d.TIME, d.REGIONSEQ, d.PLACE from tblItinerary i inner join tblDetailItinerary d on i.seq = d.itinerarySeq where i.id = 'hodu5637' and (select max(seq) from tblItinerary) = d.itinerarySeq order by i.seq desc;
+
+select i.seq as iseq from tblItinerary i inner join tblDetailItinerary d on i.seq = d.itinerarySeq where (select max(seq) from tblItinerary) = d.itinerarySeq order by i.seq desc;
+
+
+select b. from (select rownum as rnum, a. from (select seq, subject, name, regDate, readcount, rownum from tblBoard order by regDate desc) a) b where rnum = 1 and rnum = 5;
+
+
+select  from tblItinerary where id = 'hodu5637' and seq = (select max(seq) from tblItinerary);
+
+select  from tblItinerary order by seq desc;
+select  from TBLDETAILITINERARY order by seq desc;
+select  from tblRegion where seq = 42;
+
+
+select  from tblItinerary where id = 'hodu5637' and seq = (select max(seq) from tblItinerary);
+
+select  from tblitinerary;
+select  from tblItinerary order by seq;
+
+select  from tblDetailItinerary order by seq;
+
+select  from tblNotice where seq='5';
+
+
+select count() from tblMember where id= 'hodu5637' and pw='daechu77';
+
+select  from tblZzim where dday = '2015-08-26';
+
+select  from tblAccommodation where codeNum = 'JE009';
+
+select  from tblZzim where accommodationcodeNum = 'BU001';
+
+delete from tblZzim where accommodationcodeNum = 'BU001';
+commit;
+
+select  from TBLITINERARY where id='hodu5637' order by startDate asc;
+                
+insert into tblZzim values (zzimSeq.nextVal, 'bm1004', 'BU001', '2015-08-28', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'bjhhogu', 'BU001', '2015-08-28', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'hodu5637', 'BU001', '2015-08-28', '2015-09-08');
+
+
+commit;
+
+select  from tblZzim;
+
+select dDay from tblZzim where id='hodu5637';
+
+select accommodationcodeNum from tblZzim where id = 'hodu5637';
+
+select dDay from tblZzim;
+
+select accommodationCodeNum from tblZzim where dDay = '2015-09-05';
+
+select accommodationCodeNum from tblZzim where id = 'hodu5637' and dDay = '2015-09-05';
+
+select buseo, count() from insa
+          group by buseo
+                having count() = 10;
+
+-- 대기찜
+
+-- 우선 이건 실패 or 완료일거야
+select  from tblZzim where id = 'hodu5637' and dDay = '2015-09-05' order by dDay;
+
+
+select count() as cnt from tblZzim where accommodationCodeNum = 'KK016' and dDay = '2013-07-02';
+
+
+-- 날짜랑 숙박이 동일한 애의 카운트를 세야하는거자나
+select dDay from tblZzim group by dDay;
+
+
+-- 성사찜
+select accommodationCodeNum, count() as cnt from tblZzim  where accommodationCodeNum = (select accommodationCodeNum from tblZzim where id = 'hodu5637' and dDay = '2015-09-05') and dDay = '2015-09-05' group by accommodationcodeNum;
+
+select count(accommodationCodeNum) from (select  from tblZzim where dDay = '2015-09-05');
+select  from tblZzim where id='hodu5637' and dDay = '2015-09-05' and accommodationCodeNum = 'BU001';
+
+commit;
+
+select  from tblZzim z inner join tblAccommodation a on z.accommodationCodeNum = a.codeNum where z.accommodationCodeNum = 'BU001';
+
+select  from TBLAccommodation;
+
+select  from tblZzim where id = 'hodu5637' and dDay  '2015-09-05';
+
+select count() from tblZzim where accommodationCodeNum ='BU005' and dDay = '2015-09-09';
+select  from tblAccmmodation;
+select count() as cnt from tblZzim  where accommodationCodeNum = (select accommodationCodeNum from tblZzim where id = 'hodu5637' and dDay = '2015-09-05') and dDay = '2015-09-05' group by accommodationcodeNum;
+
+select  from tblPayment;
+
+select a.codeNum, a.mainImg, a.name, a.address, a.price, z.dDay from tblPayment p inner join tblAccommodation a on p.ACCOMMODATIONCODENUM = a.CODENUM inner join tblZzim z on p.ZZIMSEQ = z.seq where z.id = 'hodu5637';
+
+select a.mainImg, a.name, a.address, a.price, p.dDay from tblPayment p inner join tblAccommodation a on p.ACCOMMODATIONCODENUM = a.CODENUM;
+
+select  from tblAccommodation a inner join tblZzim z on a.codeNum = z.accommodationCodeNum where z.id='hodu5637' and a.codeNum='BU001' and dDay = '2015-09-06'; 
+
+select  from (select  from tblAccommodation a join tblRegion r on a.regionSeq = r.seq) ar 
+         join tblCity c on c.seq = ar.cityseq where codeNum='KB001';
+
+select  from tblAccommodation where name ='기대 펜션';
+
+select accommodationCodeNum, count() as cnt from tblZzim  where accommodationCodeNum = (select accommodationCodeNum from tblZzim where dDay = '2015-09-06') and dDay = '2015-09-06' group by accommodationcodeNum;
+
+-- 관리자 입장에서 성사찜은 내가 접속한 날짜에서 +7한 날짜가 디데이이면서
+-- 같은 숙박의 카운트가 3인 애들이지
+
+select accommodationCodeNum, count(accommodationCodeNum) as cnt from tblZzim where dDay = '2015-09-06' group by accommodationCodeNum;
+
+select z.dDay, a.name, a.address, a.price, z.accommodationCodeNum, z.id from tblZzim z inner join tblAccommodation a on z.ACCOMMODATIONCODENUM = a.codeNum where z.dDay='2015-09-06' and accommodationCodeNum='JE001';
+
+commit;
+
+select  from tblMember;
+
+select  from tblMessage;
+
+select  from tblZzim;
+
+insert into tblMessage values (messageSeq.nextVal, #{id}, '회원님이 예약하신 기대 펜션의 딜이 성사되었습니다!',
+'안녕하세요 회원님. HushBnB입니다.
+회원님이 예약하신 '  #{name}  '이 성사되었습니다.
+성사된 찜을 결제해주세요!
+결제는 마이페이지 - 찜목록 - 성사찜에서 결제하기를 클릭하시면 결제를 하실 수 있습니다.
+항상 HushBnB를 이용해주시는 고객님께 감사드리며 앞으로도 많은 애용 부탁드립니다.
+감사합니다 ^^' , sysdate);
+
+select  from tblMessage;
+
+select  from tblMessage where id='myy11';
+
+select  from tblDetailImg;
+
+select  from tblMember where id ='jyun9095';
+
+select count() as cnt from tblMessage where id='myy11' and regDate = '2015-08-30';
+
+select accommodationCodeNum, count(accommodationCodeNum) as cnt from tblZzim where dDay = '2015-09-07' group by accommodationCodeNum;
+
+select 
+ from tblZzim z inner join tblAccommodation a on z.accommodationCodeNum = a.codeNum
+ where z.accommodationCodeNum = 'BU001'
+ and z.dDay = '2015-08-24'
+ and id = 'hodu5637';
+ 
+ select  from tblZzim where id='hodu5637' and dday='2015-08-24';
+ 
+ delete from tblZzim where seq = 78;
+ 
+ select  from tblZzim;
+ 
+ commit;
+ 
+ select  from tblZzim where id='hodu5637';
+ 
+ select  from tblItinerary;
+ delete from tblItinerary where seq = 22;
+ delete from tblItinerary;
+ select  from tblDetailItinerary;
+ select max(seq) from tblItinerary;
+ select  from tblMessage where id = 'hodu5637' order by seq desc;
+ select  from tblZzim z inner join tblAccommodation a on z.accommodationCodeNum = a.codeNum where z.accommodationCodeNum = 'BU001' and z.dDay = '2015-09-07' and id = 'hodu5637';
+ 
+ select  from tblItinerary where id='hodu5637';
+ delete from tblItinerary where seq = 24;
+ select  from tblItinerary;
+ select  from tblDetailItinerary;
+ 
+ select  from tblZzim where dday = '2014-06-06';
+ 
+ commit;
+ 
+ -- JN011  JN011  JB0063  KK016  KB001  US013  SE011  BU001  BU048
+ 
+ select  from tblZzim where id = 'hodu5637' and dDay = '2015-09-07' order by seq desc;
+ select count() as cnt from tblZzim where accommodationCodeNum = #{accommodationCodeNum} and dDay = '2015-09-07';
+ 
+ select  from tblMessage where id = 'hodu5637' order by seq order by seq desc;
+select  from tblZzim where id = 'hodu5637' and dDay ='2015-09-07' order by dday desc;
+
+
+select  from tblZzim where id = 'hodu5637' order by dday;
+
+select  from tblItinerary;
+select  from tblDetailItinerary where ITINERARYSEQ = 40 order by seq;
+delete from tblItinerary where seq = 46;
+
+delete from TBLDETAILITINERARY where itinerarySeq = 46;
+select count() from TBLDETAILITINERARY where itinerarySeq = 1 and detailDate='2014-06-03';
+commit;
+
+select d.seq as detailItinerarySeq from tblZzim z inner join tblItinerary i on z.id = i.id inner join tblDetailItinerary d on i.seq = d.itinerarySeq where z.id='hodu5637' and z.seq = '79' and z.dDay= d.detailDate;
+
+select  from tblZzim where seq = 79;
+
+select  from TBLITINERARY;
+
+select  from TBLDETAILITINERARY where ITINERARYSEQ = 6;
+
+select  from tblZzim z inner join tblMember m on z.id = m.id;
+
+select  from tblZzim z inner join tblItinerary i on z.id = i.id where z.id='hodu5637' and z.seq = '79' and i.startDate = z.dDay and z.dDay  i.ENDDATE;
+
+select d.seq as detailItinerarySeq from tblZzim z inner join tblItinerary i on z.id = i.id inner join tblDetailItinerary d on i.seq = d.itinerarySeq where z.id='hodu5637' and z.seq = '79' and z.dDay= d.detailDate;
+
+
+select  from tblItinerary;
+
+
+
+
+
+select  from tblPayment;
+
+select  from tblItinerary;
+delete from tblItinerary where seq = 47;
+delete from TBLDETAILITINERARY where itinerarySEq = 47;
+commit;
+select  from tblzzim where id='hodu5637' and dday='2015-08-01';
+
+select d.seq as seq, d.ITINERARYSEQ, d.DETAILDATE, d.TIME, d.REGIONSEQ, d.PLACE from tblItinerary i inner join tblDetailItinerary d on i.seq = d.itinerarySeq where i.id = 'hodu5637' and 40 = d.itinerarySeq order by seq asc;
+
+insert into tblPayment values (paymentSeq.nextVal, 'BU001', '37', 'hodu5637', '79', 'n');
+
+select  from tblPayment; -- id, accommodationSeq, zzimseq
+commit;
+
+select count() as cnt from tblPayment where id='hodu5637' and accommodationCodeNum='BU001';
+
+delete from tblPayment where seq = 24;
+
+select  from tblPayment;
+
+delete from tblpayment where seq = 25;
+
+commit;
+
+select  from tblItinerary;
+
+select  from tblDetailItinerary;
+
+select accommodationCodeNum, count() as cnt 
+			from tblZzim  
+				where accommodationCodeNum = (select accommodationCodeNum 
+					from tblZzim where id = 'hodu5637' and dDay = '2015-09-08') 
+						and dDay = '2015-09-08' group by accommodationcodeNum;
+            
+select  from tblZzim where dday = '2015-09-08';
+
+delete from tblZzim where seq = 129;
+
+select  from tblPayment where id='hodu5637';
+
+select count() as cnt from tblPayment where id='hodu5637' and zzimSeq = 143;
+
+
+insert into tblZzim values (zzimSeq.nextVal, 'mudohehe', 'JE001', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'sunsun', 'JE001', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'gdragon', 'JE001', '2015-09-01', '2015-09-08');
+
+insert into tblZzim values (zzimSeq.nextVal, 'jyun9095', 'US013', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'nojy90', 'US013', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'hw5959', 'US013', '2015-09-01', '2015-09-08');
+
+insert into tblZzim values (zzimSeq.nextVal, 'jingjing', 'KB001', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'king32', 'KB001', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'ht1004', 'KB001', '2015-09-01', '2015-09-08');
+
+insert into tblZzim values (zzimSeq.nextVal, 'celery', 'JN011', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'warehouse', 'JN011', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'mj1004', 'JN011', '2015-09-01', '2015-09-08');
+
+insert into tblZzim values (zzimSeq.nextVal, 'octopus', 'JB006', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'hjhj59595', 'JB006', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'myy11', 'JB006', '2015-09-01', '2015-09-08');
+
+insert into tblZzim values (zzimSeq.nextVal, 'sotae', 'BU020', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'binuuu', 'BU020', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'mingug', 'BU020', '2015-09-01', '2015-09-08');
+
+insert into tblZzim values (zzimSeq.nextVal, 'kkimyh', 'BU044', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'gh5959', 'BU044', '2015-09-01', '2015-09-08');
+insert into tblZzim values (zzimSeq.nextVal, 'limjjang', 'BU044', '2015-09-01', '2015-09-08');
+commit;
+
+
+select  from tblAccommodation where codeNum='JN006';
+
+select  from tblNotice;
+
+select  from tblAccommodation where regionSeq = 195;
+
+select  from tblAccommodation where codeNum = 'JN001';
+select  from tblAmenity where codeNum = 'JN001';
+select  from tblDetailImg where codeNum = 'JN001';
+
+
+delete from tblAccommodation where codeNum = 'JN001';
+
+delete from tblAmenity where codeNum = 'JN001';
+
+delete from tblDetailImg where codeNum='JN001';
+
+select  from tblDetailImg;
+
+select  from tblMember;
+delete from tblMember where id='huTrash';
+
+select  from TBLDETAILITINERARY;
+
+delete from tblItinerary where seq  6;
+
+select  from tblDetailItinerary;
+select  from tblMember;
+
+select  from TBLDETAILIMG where codeNum = 'BU024';
+
+select  from tblAccommodation where codeNum = 'JN011';
+select  from tblPayment where accommodationcodeNum = 'JN001';
+
+select  from tblDetailImg order by seq;
+
+--codeNum=JN011&dDay=2015-09-23
+commit;
+
+
+select 
+ from 
+ (select 
+ from tblAccommodation a join tblRegion r on a.regionSeq = r.seq) ar 
+         join tblCity c on c.seq = ar.cityseq
+ where codeNum='JN011';
+ 
+ select 
+ from tblDetailImg
+ where codeNum = 'JN011';
+ 
+ select  from tblDetailImg order by seq;
+ 
+ insert into tblDetailImg values(detailImgSeq.nextVal, 'JB006', 'JB006_detail01.png','JB006_detail01.png', 'JB006_detail02.png', 'JB006_detail02.png', 'JB006_detail03.png', 'JB006_detail03.png', 'JN011_detail04.png', 'JB006_detail04.png', 'JB006_detail05.png', 'JB006_detail05.png');
+ 
+ update tblCountry set capital = '한양';
+ commit;
+ update tblDetailImg set codeNum = 'JB006', detailImg1 = 'JB006_detail01.png', fileName1 = 'JB006_detail01.png', detailImg2 = 'JB006_detail02.png', fileName2 = 'JB006_detail02.png', detailImg3 = 'JB006_detail03.png', fileName3 = 'JB006_detail03.png', detailImg4 = 'JB006_detail04.png', fileName4 = 'JB006_detail04.png', detailImg5 = 'JB006_detail05.png', fileName5 = 'JB006_detail05.png' where seq = 52;
